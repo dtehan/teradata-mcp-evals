@@ -1,0 +1,241 @@
+{
+  "module": "dba",
+  "cases": [
+    {
+      "id": "dba_tableSpace_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_tableSpace",
+      "input": "Show me the 10 biggest tables in the Finance database ranked by how much storage they're consuming.",
+      "expected_tools": [
+        {
+          "name": "dba_tableSpace",
+          "params": {
+            "database_name": "Finance",
+            "table_name": "",
+            "top_n": 10,
+            "exclude_system": "N",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableSqlList_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_tableSqlList",
+      "input": "Show me all the queries that have been executed against the Customer_Orders table over the past 14 days.",
+      "expected_tools": [
+        {
+          "name": "dba_tableSqlList",
+          "params": {
+            "table_name": "Customer_Orders",
+            "no_days": 14,
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_userSqlList_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_userSqlList",
+      "input": "Show me what queries John_Smith has been executing over the past 14 days.",
+      "expected_tools": [
+        {
+          "name": "dba_userSqlList",
+          "params": {
+            "user_name": "John_Smith",
+            "no_days": 14,
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_databaseSpace_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_databaseSpace",
+      "input": "How much storage is currently allocated to the Sales database?",
+      "expected_tools": [
+        {
+          "name": "dba_databaseSpace",
+          "params": {
+            "database_name": "Sales",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableUsageImpact_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_tableUsageImpact",
+      "input": "Which users are hitting the Finance database the most and how much are they consuming in terms of resources?",
+      "expected_tools": [
+        {
+          "name": "dba_tableUsageImpact",
+          "params": {
+            "database_name": "Finance",
+            "user_name": "",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_resusageSummary_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_resusageSummary",
+      "input": "Show me how much CPU, memory, and I/O was consumed over the past month, grouped by application.",
+      "expected_tools": [
+        {
+          "name": "dba_resusageSummary",
+          "params": {
+            "user_name": "",
+            "LogDate": "",
+            "dayOfWeek": "",
+            "hourOfDay": "",
+            "workloadType": "",
+            "workloadComplexity": "",
+            "AppID": "",
+            "no_days": 30,
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_databaseVersion_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_databaseVersion",
+      "input": "What release of Teradata software is currently running on our system?",
+      "expected_tools": [
+        {
+          "name": "dba_databaseVersion",
+          "params": {
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_flowControl_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_flowControl",
+      "input": "Show me the system throttling and delay statistics from January 15th 2024 through February 28th 2024.",
+      "expected_tools": [
+        {
+          "name": "dba_flowControl",
+          "params": {
+            "start_date": "2024-01-15",
+            "end_date": "2024-02-28",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_featureUsage_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_featureUsage",
+      "input": "Show me how different features were being utilized by our users between January 15th, 2024 and March 31st, 2024.",
+      "expected_tools": [
+        {
+          "name": "dba_featureUsage",
+          "params": {
+            "start_date": "2024-01-15",
+            "end_date": "2024-03-31",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_userDelay_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_userDelay",
+      "input": "Show me how long users were waiting in the system between March 1st 2024 and March 31st 2024.",
+      "expected_tools": [
+        {
+          "name": "dba_userDelay",
+          "params": {
+            "start_date": "2024-03-01",
+            "end_date": "2024-03-31",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_sessionInfo_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_sessionInfo",
+      "input": "Show me what active connections the database user SALES_ADMIN currently has open in Teradata.",
+      "expected_tools": [
+        {
+          "name": "dba_sessionInfo",
+          "params": {
+            "user_name": "SALES_ADMIN",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_systemSpace_happy",
+      "type": "happy_path",
+      "description": "Auto-generated happy path for dba_systemSpace",
+      "input": "How much disk capacity is currently being consumed across all databases in our data warehouse?",
+      "expected_tools": [
+        {
+          "name": "dba_systemSpace",
+          "params": {
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableSpace_missing_db",
+      "type": "missing_parameter",
+      "description": "Agent must ask which database to list biggest tables for",
+      "input": "Show me the biggest tables",
+      "expected_tools": []
+    },
+    {
+      "id": "dba_tableSqlList_missing_table",
+      "type": "missing_parameter",
+      "description": "Agent must ask which table to list queries for",
+      "input": "Show me the queries from the last 14 days",
+      "expected_tools": []
+    },
+    {
+      "id": "dba_userSqlList_missing_user",
+      "type": "missing_parameter",
+      "description": "Agent must ask which user to list queries for",
+      "input": "Show me the queries executed over the past 14 days",
+      "expected_tools": []
+    },
+    {
+      "id": "dba_databaseSpace_missing_db",
+      "type": "missing_parameter",
+      "description": "Agent must ask which database to get storage for",
+      "input": "How much storage is allocated?",
+      "expected_tools": []
+    },
+    {
+      "id": "dba_tableUsageImpact_missing_db",
+      "type": "missing_parameter",
+      "description": "Agent must ask which database to evaluate usage impact",
+      "input": "Which users are hitting the database the most?",
+      "expected_tools": []
+    },
+    {
+      "id": "dba_unknown_tool_missing",
+      "type": "missing_parameter",
+      "description": "User asks for a non\u2011existent DBA tool",
+      "input": "Give me the backup schedule for the system",
+      "expected_tools": []
+    }
+  ]
+}
