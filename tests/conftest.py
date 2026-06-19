@@ -36,34 +36,21 @@ def load_cases(module: str) -> list[dict]:
 
 
 def build_test_case(case: dict, bedrock_client, agent_model_id: str):
-    """Run the agent on a case and return a deepeval LLMTestCase."""
-    from deepeval.test_case import LLMTestCase, ToolCall
-    from agent.client import run_agent
+    """Run a single-turn case and return a deepeval LLMTestCase."""
+    from tests.case_runner import build_test_case as _build_test_case
 
-    evals_db = os.environ.get("EVALS_DATABASE", "")
+    evals_db = os.environ.get("EVALS_DATABASE", "").strip()
     resolved = _substitute(case, evals_db)
+    return _build_test_case(resolved, bedrock_client, agent_model_id)
 
-    result = run_agent(
-        prompt=resolved["input"],
-        model_id=agent_model_id,
-        bedrock_client=bedrock_client,
-    )
 
-    tools_called = [
-        ToolCall(name=tc.name, input_parameters=tc.input_parameters)
-        for tc in result.tool_calls
-    ]
-    expected_tools = [
-        ToolCall(name=tc["name"], input_parameters=tc.get("params", {}))
-        for tc in resolved.get("expected_tools", [])
-    ]
+def assert_eval_case(case: dict, bedrock_client, agent_model_id: str, judge_llm) -> None:
+    """Run and score any eval case (single- or multi-turn)."""
+    from tests.case_runner import assert_eval_case as _assert_eval_case
 
-    return LLMTestCase(
-        input=resolved["input"],
-        actual_output=result.final_response,
-        tools_called=tools_called,
-        expected_tools=expected_tools,
-    )
+    evals_db = os.environ.get("EVALS_DATABASE", "").strip()
+    resolved = _substitute(case, evals_db)
+    _assert_eval_case(resolved, bedrock_client, agent_model_id, judge_llm)
 
 
 @pytest.fixture(scope="session")

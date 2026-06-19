@@ -4,13 +4,13 @@
     {
       "id": "dba_tableSpace_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_tableSpace",
-      "input": "Show me the 10 biggest tables in the Finance database ranked by how much storage they're consuming.",
+      "description": "List largest tables by storage in the evals database",
+      "input": "Show me the 10 largest tables in {EVALS_DATABASE} ranked by storage consumption.",
       "expected_tools": [
         {
           "name": "dba_tableSpace",
           "params": {
-            "database_name": "Finance",
+            "database_name": "{EVALS_DATABASE}",
             "table_name": "",
             "top_n": 10,
             "exclude_system": "N",
@@ -22,13 +22,13 @@
     {
       "id": "dba_tableSqlList_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_tableSqlList",
-      "input": "Show me all the queries that have been executed against the Customer_Orders table over the past 14 days.",
+      "description": "List SQL executed against evals_orders over the past 14 days",
+      "input": "Show me all queries run against {EVALS_DATABASE}.evals_orders over the last 14 days.",
       "expected_tools": [
         {
           "name": "dba_tableSqlList",
           "params": {
-            "table_name": "Customer_Orders",
+            "table_name": "evals_orders",
             "no_days": 14,
             "persist": false
           }
@@ -54,13 +54,13 @@
     {
       "id": "dba_databaseSpace_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_databaseSpace",
-      "input": "How much storage is currently allocated to the Sales database?",
+      "description": "Storage allocated to the evals database",
+      "input": "How much disk space is allocated to the {EVALS_DATABASE} database?",
       "expected_tools": [
         {
           "name": "dba_databaseSpace",
           "params": {
-            "database_name": "Sales",
+            "database_name": "{EVALS_DATABASE}",
             "persist": false
           }
         }
@@ -69,13 +69,13 @@
     {
       "id": "dba_tableUsageImpact_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_tableUsageImpact",
-      "input": "Which users are hitting the Finance database the most and how much are they consuming in terms of resources?",
+      "description": "Which users are consuming the most resources in the evals database",
+      "input": "Which users are consuming the most resources in {EVALS_DATABASE}?",
       "expected_tools": [
         {
           "name": "dba_tableUsageImpact",
           "params": {
-            "database_name": "Finance",
+            "database_name": "{EVALS_DATABASE}",
             "user_name": "",
             "persist": false
           }
@@ -184,12 +184,192 @@
     {
       "id": "dba_systemSpace_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_systemSpace",
+      "description": "Total disk consumption across all databases",
       "input": "How much disk capacity is currently being consumed across all databases in our data warehouse?",
       "expected_tools": [
         {
           "name": "dba_systemSpace",
           "params": {
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableSpace_ambiguous_vs_databaseSpace",
+      "type": "ambiguous_selection",
+      "description": "Ranking tables by size inside one database should prefer dba_tableSpace, not dba_databaseSpace",
+      "input": "Which tables in {EVALS_DATABASE} are using the most disk space?",
+      "expected_tools": [
+        {
+          "name": "dba_tableSpace",
+          "params": {
+            "database_name": "{EVALS_DATABASE}",
+            "table_name": "",
+            "top_n": 10,
+            "exclude_system": "N",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_databaseSpace_ambiguous_vs_systemSpace",
+      "type": "ambiguous_selection",
+      "description": "Storage for one named database should prefer dba_databaseSpace, not dba_systemSpace",
+      "input": "How much total space is the {EVALS_DATABASE} database using?",
+      "expected_tools": [
+        {
+          "name": "dba_databaseSpace",
+          "params": {
+            "database_name": "{EVALS_DATABASE}",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_systemSpace_ambiguous_vs_databaseSpace",
+      "type": "ambiguous_selection",
+      "description": "Warehouse-wide storage across all databases should prefer dba_systemSpace, not dba_databaseSpace",
+      "input": "What is the total disk usage across the entire Teradata system?",
+      "expected_tools": [
+        {
+          "name": "dba_systemSpace",
+          "params": {
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableSqlList_ambiguous_vs_userSqlList",
+      "type": "ambiguous_selection",
+      "description": "Queries run against a table should prefer dba_tableSqlList, not dba_userSqlList",
+      "input": "What SQL has been executed against {EVALS_DATABASE}.evals_orders in the past week?",
+      "expected_tools": [
+        {
+          "name": "dba_tableSqlList",
+          "params": {
+            "table_name": "evals_orders",
+            "no_days": 7,
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_userSqlList_ambiguous_vs_tableSqlList",
+      "type": "ambiguous_selection",
+      "description": "Queries run by a specific user should prefer dba_userSqlList, not dba_tableSqlList",
+      "input": "List all SQL statements that user ANALYTICS_USER has run over the past 7 days.",
+      "expected_tools": [
+        {
+          "name": "dba_userSqlList",
+          "params": {
+            "user_name": "ANALYTICS_USER",
+            "no_days": 7,
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableUsageImpact_ambiguous_vs_resusageSummary",
+      "type": "ambiguous_selection",
+      "description": "Heavy users of a specific database should prefer dba_tableUsageImpact, not dba_resusageSummary",
+      "input": "Who is generating the heaviest workload against {EVALS_DATABASE}?",
+      "expected_tools": [
+        {
+          "name": "dba_tableUsageImpact",
+          "params": {
+            "database_name": "{EVALS_DATABASE}",
+            "user_name": "",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_resusageSummary_ambiguous_vs_tableUsageImpact",
+      "type": "ambiguous_selection",
+      "description": "System-wide CPU/memory/I/O by application should prefer dba_resusageSummary, not dba_tableUsageImpact",
+      "input": "Break down CPU, memory, and I/O consumption by application over the last 30 days.",
+      "expected_tools": [
+        {
+          "name": "dba_resusageSummary",
+          "params": {
+            "user_name": "",
+            "LogDate": "",
+            "dayOfWeek": "",
+            "hourOfDay": "",
+            "workloadType": "",
+            "workloadComplexity": "",
+            "AppID": "",
+            "no_days": 30,
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_tableUsageImpact_ambiguous_vs_sessionInfo",
+      "type": "ambiguous_selection",
+      "description": "Resource impact by users on a database should prefer dba_tableUsageImpact, not dba_sessionInfo",
+      "input": "Which accounts are placing the most load on {EVALS_DATABASE}?",
+      "expected_tools": [
+        {
+          "name": "dba_tableUsageImpact",
+          "params": {
+            "database_name": "{EVALS_DATABASE}",
+            "user_name": "",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_sessionInfo_ambiguous_vs_tableUsageImpact",
+      "type": "ambiguous_selection",
+      "description": "Open sessions for a specific user should prefer dba_sessionInfo, not dba_tableUsageImpact",
+      "input": "What active sessions does user SALES_ADMIN currently have open?",
+      "expected_tools": [
+        {
+          "name": "dba_sessionInfo",
+          "params": {
+            "user_name": "SALES_ADMIN",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_userDelay_ambiguous_vs_flowControl",
+      "type": "ambiguous_selection",
+      "description": "How long users waited in queues should prefer dba_userDelay, not dba_flowControl",
+      "input": "How long were users waiting in the system between March 1 and March 31, 2024?",
+      "expected_tools": [
+        {
+          "name": "dba_userDelay",
+          "params": {
+            "start_date": "2024-03-01",
+            "end_date": "2024-03-31",
+            "persist": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "dba_flowControl_ambiguous_vs_userDelay",
+      "type": "ambiguous_selection",
+      "description": "System throttling and flow-control statistics should prefer dba_flowControl, not dba_userDelay",
+      "input": "Show throttling and flow-control delay statistics from January 15 through February 28, 2024.",
+      "expected_tools": [
+        {
+          "name": "dba_flowControl",
+          "params": {
+            "start_date": "2024-01-15",
+            "end_date": "2024-02-28",
             "persist": false
           }
         }
@@ -229,6 +409,80 @@
       "description": "Agent must ask which database to evaluate usage impact",
       "input": "Which users are hitting the database the most?",
       "expected_tools": []
+    },
+    {
+      "id": "dba_tableSpace_clarify_then_call",
+      "type": "missing_parameter",
+      "description": "Agent asks which database, then calls dba_tableSpace after user clarifies",
+      "turns": [
+        {
+          "input": "Show me the biggest tables by storage",
+          "expect": "clarification"
+        },
+        {
+          "input": "Show the 10 largest tables in {EVALS_DATABASE} ranked by storage use",
+          "expected_tools": [
+            {
+              "name": "dba_tableSpace",
+              "params": {
+                "database_name": "{EVALS_DATABASE}",
+                "table_name": "",
+                "top_n": 10,
+                "exclude_system": "N",
+                "persist": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dba_tableSqlList_clarify_then_call",
+      "type": "missing_parameter",
+      "description": "Agent asks which table, then calls dba_tableSqlList after user clarifies",
+      "turns": [
+        {
+          "input": "Show me the queries from the last 14 days",
+          "expect": "clarification"
+        },
+        {
+          "input": "List SQL run against {EVALS_DATABASE}.evals_orders over the past 14 days",
+          "expected_tools": [
+            {
+              "name": "dba_tableSqlList",
+              "params": {
+                "table_name": "evals_orders",
+                "no_days": 14,
+                "persist": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dba_userSqlList_clarify_then_call",
+      "type": "missing_parameter",
+      "description": "Agent asks which user, then calls dba_userSqlList after user clarifies",
+      "turns": [
+        {
+          "input": "Show me the queries executed over the past 14 days",
+          "expect": "clarification"
+        },
+        {
+          "input": "List all SQL that user ANALYTICS_USER has run over the last 14 days",
+          "expected_tools": [
+            {
+              "name": "dba_userSqlList",
+              "params": {
+                "user_name": "ANALYTICS_USER",
+                "no_days": 14,
+                "persist": false
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "dba_unknown_tool_missing",

@@ -113,7 +113,7 @@ def main() -> None:
     parser.add_argument("--drop-first", action="store_true", help="Drop tables before recreating")
     args = parser.parse_args()
 
-    db = os.environ.get("EVALS_DATABASE")
+    db = os.environ.get("EVALS_DATABASE", "").strip()
     if not db:
         raise SystemExit("EVALS_DATABASE env var is not set — check your .env file")
 
