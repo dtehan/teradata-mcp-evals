@@ -11,10 +11,7 @@
           "name": "dba_tableSpace",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "table_name": "",
-            "top_n": 10,
-            "exclude_system": "N",
-            "persist": false
+            "top_n": 10
           }
         }
       ]
@@ -23,14 +20,13 @@
       "id": "dba_tableSqlList_happy",
       "type": "happy_path",
       "description": "List SQL executed against evals_orders over the past 14 days",
-      "input": "Show me all queries run against {EVALS_DATABASE}.evals_orders over the last 14 days.",
+      "input": "Show me all queries run against evals_orders over the last 14 days.",
       "expected_tools": [
         {
           "name": "dba_tableSqlList",
           "params": {
             "table_name": "evals_orders",
-            "no_days": 14,
-            "persist": false
+            "no_days": 14
           }
         }
       ]
@@ -38,15 +34,14 @@
     {
       "id": "dba_userSqlList_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_userSqlList",
+      "description": "Show queries executed by a specific user over the past 14 days",
       "input": "Show me what queries John_Smith has been executing over the past 14 days.",
       "expected_tools": [
         {
           "name": "dba_userSqlList",
           "params": {
             "user_name": "John_Smith",
-            "no_days": 14,
-            "persist": false
+            "no_days": 14
           }
         }
       ]
@@ -60,8 +55,7 @@
         {
           "name": "dba_databaseSpace",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "persist": false
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -75,9 +69,7 @@
         {
           "name": "dba_tableUsageImpact",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "user_name": "",
-            "persist": false
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -85,21 +77,13 @@
     {
       "id": "dba_resusageSummary_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_resusageSummary",
+      "description": "System-wide CPU/memory/IO by application over the past month",
       "input": "Show me how much CPU, memory, and I/O was consumed over the past month, grouped by application.",
       "expected_tools": [
         {
           "name": "dba_resusageSummary",
           "params": {
-            "user_name": "",
-            "LogDate": "",
-            "dayOfWeek": "",
-            "hourOfDay": "",
-            "workloadType": "",
-            "workloadComplexity": "",
-            "AppID": "",
-            "no_days": 30,
-            "persist": false
+            "no_days": 30
           }
         }
       ]
@@ -107,29 +91,26 @@
     {
       "id": "dba_databaseVersion_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_databaseVersion",
+      "description": "Get current Teradata software version",
       "input": "What release of Teradata software is currently running on our system?",
       "expected_tools": [
         {
           "name": "dba_databaseVersion",
-          "params": {
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
     {
       "id": "dba_flowControl_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_flowControl",
-      "input": "Show me the system throttling and delay statistics from January 15th 2024 through February 28th 2024.",
+      "description": "System throttling and delay statistics for a date range",
+      "input": "Show me the system throttling and flow control delay statistics from January 15th 2024 through February 28th 2024.",
       "expected_tools": [
         {
           "name": "dba_flowControl",
           "params": {
             "start_date": "2024-01-15",
-            "end_date": "2024-02-28",
-            "persist": false
+            "end_date": "2024-02-28"
           }
         }
       ]
@@ -137,15 +118,14 @@
     {
       "id": "dba_featureUsage_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_featureUsage",
-      "input": "Show me how different features were being utilized by our users between January 15th, 2024 and March 31st, 2024.",
+      "description": "Feature utilization metrics for a date range",
+      "input": "Show me how different Teradata features were being utilized by our users between January 15th, 2024 and March 31st, 2024.",
       "expected_tools": [
         {
           "name": "dba_featureUsage",
           "params": {
             "start_date": "2024-01-15",
-            "end_date": "2024-03-31",
-            "persist": false
+            "end_date": "2024-03-31"
           }
         }
       ]
@@ -153,15 +133,14 @@
     {
       "id": "dba_userDelay_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_userDelay",
-      "input": "Show me how long users were waiting in the system between March 1st 2024 and March 31st 2024.",
+      "description": "How long users waited in queues for a date range",
+      "input": "Show me how long users were waiting in the query queue between March 1st 2024 and March 31st 2024.",
       "expected_tools": [
         {
           "name": "dba_userDelay",
           "params": {
             "start_date": "2024-03-01",
-            "end_date": "2024-03-31",
-            "persist": false
+            "end_date": "2024-03-31"
           }
         }
       ]
@@ -169,14 +148,13 @@
     {
       "id": "dba_sessionInfo_happy",
       "type": "happy_path",
-      "description": "Auto-generated happy path for dba_sessionInfo",
+      "description": "Active sessions for a specific user",
       "input": "Show me what active connections the database user SALES_ADMIN currently has open in Teradata.",
       "expected_tools": [
         {
           "name": "dba_sessionInfo",
           "params": {
-            "user_name": "SALES_ADMIN",
-            "persist": false
+            "user_name": "SALES_ADMIN"
           }
         }
       ]
@@ -189,9 +167,7 @@
       "expected_tools": [
         {
           "name": "dba_systemSpace",
-          "params": {
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
@@ -204,11 +180,7 @@
         {
           "name": "dba_tableSpace",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "",
-            "top_n": 10,
-            "exclude_system": "N",
-            "persist": false
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -222,8 +194,7 @@
         {
           "name": "dba_databaseSpace",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "persist": false
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -236,9 +207,7 @@
       "expected_tools": [
         {
           "name": "dba_systemSpace",
-          "params": {
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
@@ -246,14 +215,13 @@
       "id": "dba_tableSqlList_ambiguous_vs_userSqlList",
       "type": "ambiguous_selection",
       "description": "Queries run against a table should prefer dba_tableSqlList, not dba_userSqlList",
-      "input": "What SQL has been executed against {EVALS_DATABASE}.evals_orders in the past week?",
+      "input": "What SQL has been executed against evals_orders in the past week?",
       "expected_tools": [
         {
           "name": "dba_tableSqlList",
           "params": {
             "table_name": "evals_orders",
-            "no_days": 7,
-            "persist": false
+            "no_days": 7
           }
         }
       ]
@@ -268,8 +236,7 @@
           "name": "dba_userSqlList",
           "params": {
             "user_name": "ANALYTICS_USER",
-            "no_days": 7,
-            "persist": false
+            "no_days": 7
           }
         }
       ]
@@ -283,9 +250,7 @@
         {
           "name": "dba_tableUsageImpact",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "user_name": "",
-            "persist": false
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -299,15 +264,7 @@
         {
           "name": "dba_resusageSummary",
           "params": {
-            "user_name": "",
-            "LogDate": "",
-            "dayOfWeek": "",
-            "hourOfDay": "",
-            "workloadType": "",
-            "workloadComplexity": "",
-            "AppID": "",
-            "no_days": 30,
-            "persist": false
+            "no_days": 30
           }
         }
       ]
@@ -315,15 +272,13 @@
     {
       "id": "dba_tableUsageImpact_ambiguous_vs_sessionInfo",
       "type": "ambiguous_selection",
-      "description": "Resource impact by users on a database should prefer dba_tableUsageImpact, not dba_sessionInfo",
-      "input": "Which accounts are placing the most load on {EVALS_DATABASE}?",
+      "description": "Historical resource consumption by users in a database should prefer dba_tableUsageImpact, not dba_sessionInfo",
+      "input": "Which users have been consuming the most CPU and query resources in {EVALS_DATABASE} over time?",
       "expected_tools": [
         {
           "name": "dba_tableUsageImpact",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "user_name": "",
-            "persist": false
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -337,8 +292,7 @@
         {
           "name": "dba_sessionInfo",
           "params": {
-            "user_name": "SALES_ADMIN",
-            "persist": false
+            "user_name": "SALES_ADMIN"
           }
         }
       ]
@@ -347,14 +301,13 @@
       "id": "dba_userDelay_ambiguous_vs_flowControl",
       "type": "ambiguous_selection",
       "description": "How long users waited in queues should prefer dba_userDelay, not dba_flowControl",
-      "input": "How long were users waiting in the system between March 1 and March 31, 2024?",
+      "input": "How long were users waiting in the query queue between March 1 and March 31, 2024?",
       "expected_tools": [
         {
           "name": "dba_userDelay",
           "params": {
             "start_date": "2024-03-01",
-            "end_date": "2024-03-31",
-            "persist": false
+            "end_date": "2024-03-31"
           }
         }
       ]
@@ -369,8 +322,7 @@
           "name": "dba_flowControl",
           "params": {
             "start_date": "2024-01-15",
-            "end_date": "2024-02-28",
-            "persist": false
+            "end_date": "2024-02-28"
           }
         }
       ]
@@ -393,43 +345,39 @@
       "id": "dba_userSqlList_missing_user",
       "type": "missing_parameter",
       "description": "Agent must ask which user to list queries for",
-      "input": "Show me the queries executed over the past 14 days",
+      "input": "Show me the queries a user executed over the past 14 days",
       "expected_tools": []
     },
     {
       "id": "dba_databaseSpace_missing_db",
       "type": "missing_parameter",
       "description": "Agent must ask which database to get storage for",
-      "input": "How much storage is allocated?",
+      "input": "How much space is a specific database using?",
       "expected_tools": []
     },
     {
       "id": "dba_tableUsageImpact_missing_db",
       "type": "missing_parameter",
-      "description": "Agent must ask which database to evaluate usage impact",
-      "input": "Which users are hitting the database the most?",
+      "description": "Agent must ask which database to evaluate usage impact for",
+      "input": "Which users are hitting a particular database the most?",
       "expected_tools": []
     },
     {
-      "id": "dba_tableSpace_clarify_then_call",
+      "id": "dba_databaseSpace_clarify_then_call",
       "type": "missing_parameter",
-      "description": "Agent asks which database, then calls dba_tableSpace after user clarifies",
+      "description": "Agent asks which database, then calls dba_databaseSpace after user clarifies",
       "turns": [
         {
-          "input": "Show me the biggest tables by storage",
+          "input": "How much space is a specific database using?",
           "expect": "clarification"
         },
         {
-          "input": "Show the 10 largest tables in {EVALS_DATABASE} ranked by storage use",
+          "input": "How much disk space is the {EVALS_DATABASE} database using?",
           "expected_tools": [
             {
-              "name": "dba_tableSpace",
+              "name": "dba_databaseSpace",
               "params": {
-                "database_name": "{EVALS_DATABASE}",
-                "table_name": "",
-                "top_n": 10,
-                "exclude_system": "N",
-                "persist": false
+                "database_name": "{EVALS_DATABASE}"
               }
             }
           ]
@@ -446,14 +394,13 @@
           "expect": "clarification"
         },
         {
-          "input": "List SQL run against {EVALS_DATABASE}.evals_orders over the past 14 days",
+          "input": "List SQL run against evals_orders over the past 14 days",
           "expected_tools": [
             {
               "name": "dba_tableSqlList",
               "params": {
                 "table_name": "evals_orders",
-                "no_days": 14,
-                "persist": false
+                "no_days": 14
               }
             }
           ]
@@ -466,7 +413,7 @@
       "description": "Agent asks which user, then calls dba_userSqlList after user clarifies",
       "turns": [
         {
-          "input": "Show me the queries executed over the past 14 days",
+          "input": "Show me the queries a user executed over the past 14 days",
           "expect": "clarification"
         },
         {
@@ -476,8 +423,7 @@
               "name": "dba_userSqlList",
               "params": {
                 "user_name": "ANALYTICS_USER",
-                "no_days": 14,
-                "persist": false
+                "no_days": 14
               }
             }
           ]
@@ -487,8 +433,8 @@
     {
       "id": "dba_unknown_tool_missing",
       "type": "missing_parameter",
-      "description": "User asks for a non\u2011existent DBA tool",
-      "input": "Give me the backup schedule for the system",
+      "description": "User asks for something no DBA tool supports — agent should explain and ask for clarification",
+      "input": "Automatically redistribute my table data across AMPs to improve skew",
       "expected_tools": []
     }
   ]

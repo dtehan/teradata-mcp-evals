@@ -90,14 +90,14 @@
     {
       "id": "base_columnMetadata_happy",
       "type": "happy_path",
-      "description": "List columns and data types for the evals orders table",
-      "input": "What columns are in {EVALS_DATABASE}.evals_orders and what are their data types?",
+      "description": "Get precise Teradata type codes, character sets, and precision for columns in evals_orders",
+      "input": "Give me the exact Teradata type codes, character set, and decimal precision for every column in {EVALS_DATABASE}.evals_orders",
       "expected_tools": [
         {
           "name": "base_columnMetadata",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders"
+            "db_name": "{EVALS_DATABASE}",
+            "object_name": "evals_orders"
           }
         }
       ]
@@ -105,14 +105,14 @@
     {
       "id": "base_columnMetadata_ambiguous_vs_tableDDL",
       "type": "ambiguous_selection",
-      "description": "Asking specifically about column names and nullability should prefer base_columnMetadata",
-      "input": "List every column in {EVALS_DATABASE}.evals_employees with its data type and whether it allows nulls",
+      "description": "Asking for technical Teradata column precision metadata should prefer base_columnMetadata over base_tableDDL",
+      "input": "I need the UNICODE vs LATIN character set and nullability for every column in {EVALS_DATABASE}.evals_employees",
       "expected_tools": [
         {
           "name": "base_columnMetadata",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_employees"
+            "db_name": "{EVALS_DATABASE}",
+            "object_name": "evals_employees"
           }
         }
       ]
@@ -195,7 +195,7 @@
           "name": "base_saveDDL",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders"
+            "object_name": "evals_orders"
           }
         }
       ]
@@ -203,13 +203,14 @@
     {
       "id": "base_tableAffinity_ambiguous_vs_tableUsage",
       "type": "ambiguous_selection",
-      "description": "Finding tables commonly queried together should prefer base_tableAffinity, not base_tableUsage",
-      "input": "Which tables in {EVALS_DATABASE} tend to appear in the same queries?",
+      "description": "Finding tables co-queried with a specific table should prefer base_tableAffinity, not base_tableUsage",
+      "input": "Which tables in {EVALS_DATABASE} tend to appear in the same queries as evals_employees?",
       "expected_tools": [
         {
           "name": "base_tableAffinity",
           "params": {
-            "database_name": "{EVALS_DATABASE}"
+            "database_name": "{EVALS_DATABASE}",
+            "table_name": "evals_employees"
           }
         }
       ]
@@ -217,14 +218,13 @@
     {
       "id": "base_tableUsage_ambiguous_vs_tableAffinity",
       "type": "ambiguous_selection",
-      "description": "Access frequency for a specific table should prefer base_tableUsage, not base_tableAffinity",
-      "input": "Who has been reading {EVALS_DATABASE}.evals_orders lately and how often?",
+      "description": "Access frequency for tables in a database should prefer base_tableUsage, not base_tableAffinity",
+      "input": "Who has been reading tables in {EVALS_DATABASE} lately and how often?",
       "expected_tools": [
         {
           "name": "base_tableUsage",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders"
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -239,7 +239,7 @@
           "name": "base_saveDDL",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_employees"
+            "object_name": "evals_employees"
           }
         }
       ]
@@ -247,13 +247,14 @@
     {
       "id": "base_tableAffinity_happy",
       "type": "happy_path",
-      "description": "Find tables commonly queried together in the evals database",
-      "input": "Which tables in {EVALS_DATABASE} are most often queried together?",
+      "description": "Find tables commonly queried together with evals_orders",
+      "input": "Which tables in {EVALS_DATABASE} are most often queried together with evals_orders?",
       "expected_tools": [
         {
           "name": "base_tableAffinity",
           "params": {
-            "database_name": "{EVALS_DATABASE}"
+            "database_name": "{EVALS_DATABASE}",
+            "table_name": "evals_orders"
           }
         }
       ]
@@ -261,14 +262,13 @@
     {
       "id": "base_tableUsage_happy",
       "type": "happy_path",
-      "description": "Check usage metrics for the evals orders table",
-      "input": "How frequently is {EVALS_DATABASE}.evals_orders being accessed and by whom?",
+      "description": "Check usage metrics for the evals database",
+      "input": "How frequently are the tables in {EVALS_DATABASE} being accessed and by whom?",
       "expected_tools": [
         {
           "name": "base_tableUsage",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders"
+            "database_name": "{EVALS_DATABASE}"
           }
         }
       ]
@@ -310,8 +310,8 @@
         {
           "name": "base_columnMetadata",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders"
+            "db_name": "{EVALS_DATABASE}",
+            "object_name": "evals_orders"
           }
         }
       ]
@@ -405,10 +405,55 @@
       ]
     },
     {
+      "id": "base_columnDescription_happy",
+      "type": "happy_path",
+      "description": "Show basic column info for the evals employees table",
+      "input": "Show me the columns in {EVALS_DATABASE}.evals_employees",
+      "expected_tools": [
+        {
+          "name": "base_columnDescription",
+          "params": {
+            "database_name": "{EVALS_DATABASE}",
+            "obj_name": "evals_employees"
+          }
+        }
+      ]
+    },
+    {
+      "id": "base_columnDescription_ambiguous_vs_columnMetadata",
+      "type": "ambiguous_selection",
+      "description": "A simple 'what columns does this table have' question should prefer base_columnDescription",
+      "input": "What are the column names and types in {EVALS_DATABASE}.evals_orders?",
+      "expected_tools": [
+        {
+          "name": "base_columnDescription",
+          "params": {
+            "database_name": "{EVALS_DATABASE}",
+            "obj_name": "evals_orders"
+          }
+        }
+      ]
+    },
+    {
+      "id": "base_columnMetadata_ambiguous_vs_columnDescription",
+      "type": "ambiguous_selection",
+      "description": "Asking for precise Teradata type codes and character sets should prefer base_columnMetadata",
+      "input": "Give me the exact Teradata type codes, character sets, and precision details for every column in {EVALS_DATABASE}.evals_employees",
+      "expected_tools": [
+        {
+          "name": "base_columnMetadata",
+          "params": {
+            "db_name": "{EVALS_DATABASE}",
+            "object_name": "evals_employees"
+          }
+        }
+      ]
+    },
+    {
       "id": "base_unknown_tool_missing",
       "type": "missing_parameter",
-      "description": "User asks for a non\u2011existent tool, agent should ask for clarification",
-      "input": "Generate a report of the fastest query execution times",
+      "description": "User asks to do something no tool supports — agent should explain and ask for clarification",
+      "input": "Automatically tune my Teradata database indexes and rebalance the AMPs",
       "expected_tools": []
     }
   ]

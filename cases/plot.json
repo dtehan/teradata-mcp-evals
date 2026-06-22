@@ -10,12 +10,9 @@
         {
           "name": "plot_line_chart",
           "params": {
-            "table_name": "evals_orders",
-            "database_name": "{EVALS_DATABASE}",
+            "table_name": "{EVALS_DATABASE}.evals_orders",
             "labels": "order_date",
-            "columns": [
-              "amount"
-            ]
+            "columns": ["amount"]
           }
         }
       ]
@@ -24,13 +21,12 @@
       "id": "plot_pie_chart_happy",
       "type": "happy_path",
       "description": "Pie chart breaking down orders by product category",
-      "input": "Show me a pie chart of total order amounts broken down by product_category from {EVALS_DATABASE}.evals_orders",
+      "input": "Plot {EVALS_DATABASE}.evals_orders as a pie chart using product_category for the slice labels and amount for the values.",
       "expected_tools": [
         {
           "name": "plot_pie_chart",
           "params": {
-            "table_name": "evals_orders",
-            "database_name": "{EVALS_DATABASE}",
+            "table_name": "{EVALS_DATABASE}.evals_orders",
             "labels": "product_category",
             "column": "amount"
           }
@@ -46,8 +42,7 @@
         {
           "name": "plot_polar_chart",
           "params": {
-            "table_name": "evals_orders",
-            "database_name": "{EVALS_DATABASE}",
+            "table_name": "{EVALS_DATABASE}.evals_orders",
             "labels": "product_category",
             "column": "amount"
           }
@@ -57,14 +52,13 @@
     {
       "id": "plot_radar_chart_happy",
       "type": "happy_path",
-      "description": "Radar chart comparing salary across departments in evals_employees",
-      "input": "Draw a spider chart comparing average salary across departments from {EVALS_DATABASE}.evals_employees",
+      "description": "Radar chart of salary by department in evals_employees",
+      "input": "Draw a spider chart from {EVALS_DATABASE}.evals_employees using department as the axis labels and salary as the values.",
       "expected_tools": [
         {
           "name": "plot_radar_chart",
           "params": {
-            "table_name": "evals_employees",
-            "database_name": "{EVALS_DATABASE}",
+            "table_name": "{EVALS_DATABASE}.evals_employees",
             "labels": "department",
             "columns": "salary"
           }
@@ -75,17 +69,14 @@
       "id": "plot_line_vs_radar_ambiguous",
       "type": "ambiguous_selection",
       "description": "Time-series data should use line chart, not radar",
-      "input": "Plot order amounts over time from {EVALS_DATABASE}.evals_orders",
+      "input": "Plot how order amounts change over time from {EVALS_DATABASE}.evals_orders using order_date on the x-axis",
       "expected_tools": [
         {
           "name": "plot_line_chart",
           "params": {
-            "table_name": "evals_orders",
-            "database_name": "{EVALS_DATABASE}",
+            "table_name": "{EVALS_DATABASE}.evals_orders",
             "labels": "order_date",
-            "columns": [
-              "amount"
-            ]
+            "columns": ["amount"]
           }
         }
       ]
@@ -94,13 +85,12 @@
       "id": "plot_pie_vs_polar_ambiguous",
       "type": "ambiguous_selection",
       "description": "Proportion/share breakdown should use pie chart over polar",
-      "input": "Show the share of total revenue by product_category from {EVALS_DATABASE}.evals_orders as a chart",
+      "input": "Use a pie chart to show {EVALS_DATABASE}.evals_orders with product_category as labels and amount as the values.",
       "expected_tools": [
         {
           "name": "plot_pie_chart",
           "params": {
-            "table_name": "evals_orders",
-            "database_name": "{EVALS_DATABASE}",
+            "table_name": "{EVALS_DATABASE}.evals_orders",
             "labels": "product_category",
             "column": "amount"
           }
@@ -115,18 +105,18 @@
       "expected_tools": []
     },
     {
-      "id": "plot_multi_tool_query_then_plot",
-      "type": "multi_tool",
-      "description": "Query data then plot it \u2014 base_readQuery followed by a plot tool",
-      "input": "Query the total amount per product_category from {EVALS_DATABASE}.evals_orders and plot it as a pie chart",
+      "id": "plot_pie_chart_direct",
+      "type": "happy_path",
+      "description": "Direct pie chart from table — no pre-query needed since plot tools read tables directly",
+      "input": "Give me a pie chart of amount by product_category from {EVALS_DATABASE}.evals_orders",
       "expected_tools": [
         {
-          "name": "base_readQuery",
-          "params": {}
-        },
-        {
           "name": "plot_pie_chart",
-          "params": {}
+          "params": {
+            "table_name": "{EVALS_DATABASE}.evals_orders",
+            "labels": "product_category",
+            "column": "amount"
+          }
         }
       ]
     },

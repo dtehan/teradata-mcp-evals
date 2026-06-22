@@ -9,11 +9,7 @@
       "expected_tools": [
         {
           "name": "qlty_missingValues",
-          "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
@@ -25,11 +21,7 @@
       "expected_tools": [
         {
           "name": "qlty_missingValues",
-          "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
@@ -41,11 +33,7 @@
       "expected_tools": [
         {
           "name": "qlty_negativeValues",
-          "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
@@ -58,10 +46,7 @@
         {
           "name": "qlty_distinctCategories",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "column_name": "product_category",
-            "persist": false
+            "column_name": "product_category"
           }
         }
       ]
@@ -70,7 +55,7 @@
       "id": "qlty_distinctCategories_missing_column",
       "type": "missing_parameter",
       "description": "Agent must ask which column when none is specified",
-      "input": "Show me the unique categories in {EVALS_DATABASE}.evals_orders",
+      "input": "What distinct values exist in a column of {EVALS_DATABASE}.evals_orders?",
       "expected_tools": []
     },
     {
@@ -82,10 +67,7 @@
         {
           "name": "qlty_standardDeviation",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_employees",
-            "column_name": "salary",
-            "persist": false
+            "column_name": "salary"
           }
         }
       ]
@@ -99,10 +81,7 @@
         {
           "name": "qlty_standardDeviation",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_employees",
-            "column_name": "salary",
-            "persist": false
+            "column_name": "salary"
           }
         }
       ]
@@ -115,11 +94,7 @@
       "expected_tools": [
         {
           "name": "qlty_columnSummary",
-          "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_employees",
-            "persist": false
-          }
+          "params": {}
         }
       ]
     },
@@ -132,10 +107,7 @@
         {
           "name": "qlty_univariateStatistics",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_employees",
-            "column_name": "salary",
-            "persist": false
+            "column_name": "salary"
           }
         }
       ]
@@ -149,10 +121,7 @@
         {
           "name": "qlty_univariateStatistics",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "column_name": "amount",
-            "persist": false
+            "column_name": "amount"
           }
         }
       ]
@@ -166,10 +135,7 @@
         {
           "name": "qlty_rowsWithMissingValues",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "column_name": "ship_date",
-            "persist": false
+            "column_name": "ship_date"
           }
         }
       ]
@@ -183,10 +149,7 @@
         {
           "name": "qlty_rowsWithMissingValues",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "column_name": "ship_date",
-            "persist": false
+            "column_name": "ship_date"
           }
         }
       ]
@@ -199,19 +162,12 @@
       "expected_tools": [
         {
           "name": "qlty_columnSummary",
-          "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "persist": false
-          }
+          "params": {}
         },
         {
           "name": "qlty_rowsWithMissingValues",
           "params": {
-            "database_name": "{EVALS_DATABASE}",
-            "table_name": "evals_orders",
-            "column_name": "ship_date",
-            "persist": false
+            "column_name": "ship_date"
           }
         }
       ]

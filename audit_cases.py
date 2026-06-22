@@ -35,6 +35,7 @@ AMBIGUOUS_PAIRS: dict[str, list[tuple[str, str]]] = {
         ("base_tableList", "base_databaseList"),
         ("base_saveDDL", "base_tableDDL"),
         ("base_tableAffinity", "base_tableUsage"),
+        ("base_columnDescription", "base_columnMetadata"),
     ],
     "dba": [
         ("dba_tableSpace", "dba_databaseSpace"),

@@ -1,5 +1,6 @@
 .env
 .venv
+.deepeval
 __pycache__/
 *.pyc
 *.pyo
@@ -8,3 +9,6 @@ __pycache__/
 *.sqlite3
 *.db
 *.bak
+# Dev-space description overrides (never commit drafts)
+description_overrides.json
+results/

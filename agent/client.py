@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import boto3
@@ -13,6 +14,49 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
 MAX_TOOL_RESULT_CHARS = int(os.environ.get("MAX_TOOL_RESULT_CHARS", "8000"))
+
+# ---------------------------------------------------------------------------
+# Description-override dev space
+# ---------------------------------------------------------------------------
+# Set DESCRIPTION_OVERRIDES_FILE (or place description_overrides.json in the
+# repo root) to patch tool descriptions seen by Bedrock without touching the
+# running MCP server.  The file is gitignored — safe to iterate freely.
+# ---------------------------------------------------------------------------
+
+
+def _load_description_overrides() -> dict[str, str]:
+    """Return {tool_name: description} from the overrides file, or {} if absent."""
+    env_path = os.environ.get("DESCRIPTION_OVERRIDES_FILE")
+    if env_path:
+        candidates = [Path(env_path)]
+    else:
+        candidates = [
+            Path(__file__).parent.parent / "description_overrides.json",
+            Path("description_overrides.json"),
+        ]
+    for path in candidates:
+        if path.exists():
+            try:
+                data = json.loads(path.read_text())
+                if isinstance(data, dict):
+                    return {k: v for k, v in data.items() if isinstance(v, str)}
+            except Exception:
+                pass
+    return {}
+
+
+def _apply_description_overrides(tools: list, overrides: dict[str, str]) -> list:
+    """Return a new list with tool descriptions replaced where an override exists."""
+    if not overrides:
+        return tools
+
+    patched = []
+    for tool in tools:
+        name = getattr(tool, "name", None)
+        if name and name in overrides:
+            tool = tool.model_copy(update={"description": overrides[name]})
+        patched.append(tool)
+    return patched
 
 
 @dataclass
@@ -121,11 +165,13 @@ async def _run_agent_turns_async(
     max_steps_per_turn: int,
 ) -> list[TurnResult]:
     """Run a scripted multi-turn conversation in one MCP session."""
+    overrides = _load_description_overrides()
     async with streamablehttp_client(mcp_url) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools_response = await session.list_tools()
-            bedrock_tools = [_mcp_tool_to_bedrock(t) for t in tools_response.tools]
+            patched_tools = _apply_description_overrides(tools_response.tools, overrides)
+            bedrock_tools = [_mcp_tool_to_bedrock(t) for t in patched_tools]
 
             messages: list[dict] = []
             turn_results: list[TurnResult] = []
@@ -177,11 +223,13 @@ async def _run_agent_async(
     mcp_url: str,
     max_steps: int,
 ) -> AgentResult:
+    overrides = _load_description_overrides()
     async with streamablehttp_client(mcp_url) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools_response = await session.list_tools()
-            bedrock_tools = [_mcp_tool_to_bedrock(t) for t in tools_response.tools]
+            patched_tools = _apply_description_overrides(tools_response.tools, overrides)
+            bedrock_tools = [_mcp_tool_to_bedrock(t) for t in patched_tools]
 
             messages: list[dict] = [
                 {"role": "user", "content": [{"text": prompt}]}
