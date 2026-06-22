@@ -96,7 +96,7 @@
         {
           "name": "base_columnMetadata",
           "params": {
-            "db_name": "{EVALS_DATABASE}",
+            "database_name": "{EVALS_DATABASE}",
             "object_name": "evals_orders"
           }
         }
@@ -111,7 +111,7 @@
         {
           "name": "base_columnMetadata",
           "params": {
-            "db_name": "{EVALS_DATABASE}",
+            "database_name": "{EVALS_DATABASE}",
             "object_name": "evals_employees"
           }
         }
@@ -195,7 +195,7 @@
           "name": "base_saveDDL",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "object_name": "evals_orders"
+            "table_name": "evals_orders"
           }
         }
       ]
@@ -239,7 +239,7 @@
           "name": "base_saveDDL",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "object_name": "evals_employees"
+            "table_name": "evals_employees"
           }
         }
       ]
@@ -310,7 +310,7 @@
         {
           "name": "base_columnMetadata",
           "params": {
-            "db_name": "{EVALS_DATABASE}",
+            "database_name": "{EVALS_DATABASE}",
             "object_name": "evals_orders"
           }
         }
@@ -414,7 +414,7 @@
           "name": "base_columnDescription",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "obj_name": "evals_employees"
+            "table_name": "evals_employees"
           }
         }
       ]
@@ -429,7 +429,7 @@
           "name": "base_columnDescription",
           "params": {
             "database_name": "{EVALS_DATABASE}",
-            "obj_name": "evals_orders"
+            "table_name": "evals_orders"
           }
         }
       ]
@@ -443,7 +443,7 @@
         {
           "name": "base_columnMetadata",
           "params": {
-            "db_name": "{EVALS_DATABASE}",
+            "database_name": "{EVALS_DATABASE}",
             "object_name": "evals_employees"
           }
         }

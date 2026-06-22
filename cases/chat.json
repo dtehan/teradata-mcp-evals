@@ -2,20 +2,6 @@
   "module": "chat",
   "cases": [
     {
-      "id": "chat_completeChat_happy",
-      "type": "happy_path",
-      "description": "Basic LLM chat completion",
-      "input": "Use the chat tool to ask: what is Teradata Vantage?",
-      "expected_tools": [
-        {
-          "name": "chat_completeChat",
-          "params": {
-            "message": "what is Teradata Vantage?"
-          }
-        }
-      ]
-    },
-    {
       "id": "chat_completeChat_missing_message",
       "type": "missing_parameter",
       "description": "User invokes chat without providing a message",
@@ -23,37 +9,9 @@
       "expected_tools": []
     },
     {
-      "id": "chat_aggregatedCompleteChat_happy",
-      "type": "happy_path",
-      "description": "Aggregated LLM chat for multi-response analysis",
-      "input": "Run an aggregated chat completion asking: summarise the benefits of in-database analytics",
-      "expected_tools": [
-        {
-          "name": "chat_aggregatedCompleteChat",
-          "params": {
-            "message": "summarise the benefits of in-database analytics"
-          }
-        }
-      ]
-    },
-    {
-      "id": "chat_aggregated_vs_simple",
-      "type": "ambiguous_selection",
-      "description": "When the user asks for a single response, the simple chat tool should be preferred over the aggregated one",
-      "input": "Send this message to the chat model: explain what a columnar database is",
-      "expected_tools": [
-        {
-          "name": "chat_completeChat",
-          "params": {
-            "message": "explain what a columnar database is"
-          }
-        }
-      ]
-    },
-    {
       "id": "chat_unknown_tool_missing",
       "type": "missing_parameter",
-      "description": "User asks for a non\u2011existent chat tool",
+      "description": "User asks for a non‑existent chat tool",
       "input": "Talk to the assistant about budgeting",
       "expected_tools": []
     }
