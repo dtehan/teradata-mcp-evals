@@ -2,9 +2,9 @@
 Dump live MCP tool descriptions to results/live_descriptions_<module>.json.
 
 Usage:
-    uv run python inspect_tools.py                  # all base tools
-    uv run python inspect_tools.py --module base    # explicit module filter
-    uv run python inspect_tools.py --all-modules    # every module on the server
+    uv run python backup/inspect_tools.py                  # all base tools
+    uv run python backup/inspect_tools.py --module base    # explicit module filter
+    uv run python backup/inspect_tools.py --all-modules    # every module on the server
 
 Output: results/live_descriptions_<module>.json  (one file per module)
 """
@@ -23,7 +23,7 @@ from mcp.client.streamable_http import streamablehttp_client
 
 load_dotenv()
 
-RESULTS_DIR = Path(__file__).parent / "results"
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 DEFAULT_MODULES = {"base"}
 
 

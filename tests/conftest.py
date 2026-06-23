@@ -69,3 +69,39 @@ def agent_model_id() -> str:
 def judge_llm(bedrock_client):
     from judge.bedrock_llm import BedrockLLM
     return BedrockLLM(bedrock_client=bedrock_client)
+
+
+def pytest_sessionstart(session) -> None:
+    """Initialize eval result collection for live eval runs."""
+    from agent.client import get_description_override_status
+    from judge.report import begin_eval_run
+
+    agent_model_id = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    judge_model_id = os.environ.get("BEDROCK_JUDGE_MODEL_ID", agent_model_id)
+    override_status = get_description_override_status()
+    begin_eval_run(
+        agent_model_id=agent_model_id,
+        judge_model_id=judge_model_id,
+        evals_database=os.environ.get("EVALS_DATABASE", "").strip(),
+        description_mode=str(override_status["mode"]),
+        description_overrides_file=override_status.get("file"),  # type: ignore[arg-type]
+        description_override_count=int(override_status.get("tool_count") or 0),
+    )
+
+
+def pytest_sessionfinish(session, exitstatus) -> None:
+    """Write a markdown/json summary when live eval cases were executed."""
+    from judge.report import get_current_report, write_eval_summary
+
+    report = get_current_report()
+    if report is None or not report.results:
+        return
+
+    artifacts = write_eval_summary(report)
+    terminal = session.config.pluginmanager.get_plugin("terminalreporter")
+    if terminal is not None:
+        terminal.write_line("")
+        terminal.write_line(f"Eval run: {artifacts.run_id}")
+        terminal.write_line(f"Run directory: results/{artifacts.run_dir.name}")
+        terminal.write_line("Summary: results/latest_summary.md (copy of this run)")
+        terminal.write_line("Index: results/index.json")

@@ -1,6 +1,6 @@
 """Unit tests for audit_cases.py (offline logic only — no MCP connection)."""
 
-from audit_cases import (
+from backup.audit_cases import (
     audit_ambiguous_pair_gaps,
     audit_live_tool_gaps,
     happy_path_tools,

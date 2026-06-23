@@ -2,10 +2,10 @@
 Audit eval case coverage: ambiguous tool pairs and (optionally) live MCP tool list.
 
 Usage:
-    uv run python audit_cases.py                         # ambiguous pairs, all priority modules
-    uv run python audit_cases.py --module base           # one module
-    uv run python audit_cases.py --strict                # exit 1 on pair gaps (offline, CI-safe)
-    uv run python audit_cases.py --strict --live-mcp     # also diff against running MCP server
+    uv run python backup/audit_cases.py                         # ambiguous pairs, all priority modules
+    uv run python backup/audit_cases.py --module base           # one module
+    uv run python backup/audit_cases.py --strict                # exit 1 on pair gaps (offline, CI-safe)
+    uv run python backup/audit_cases.py --strict --live-mcp     # also diff against running MCP server
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CASES_DIR = Path(__file__).parent / "cases"
+CASES_DIR = Path(__file__).resolve().parent.parent / "cases"
 
 IN_SCOPE_MODULES = frozenset({"base", "dba", "sec", "qlty", "chat", "plot", "tmpl"})
 PRIORITY_MODULES = frozenset({"base", "dba", "sec", "qlty"})

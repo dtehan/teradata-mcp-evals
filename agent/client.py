@@ -16,32 +16,73 @@ from mcp.client.streamable_http import streamablehttp_client
 MAX_TOOL_RESULT_CHARS = int(os.environ.get("MAX_TOOL_RESULT_CHARS", "8000"))
 
 # ---------------------------------------------------------------------------
-# Description-override dev space
+# Description overrides (opt-in)
 # ---------------------------------------------------------------------------
-# Set DESCRIPTION_OVERRIDES_FILE (or place description_overrides.json in the
-# repo root) to patch tool descriptions seen by Bedrock without touching the
-# running MCP server.  The file is gitignored — safe to iterate freely.
+# By default evals use live MCP server tool descriptions (baseline).
+# Set USE_DESCRIPTION_OVERRIDES=1 or pass --with-description-overrides to
+# run_evals.py to patch descriptions from description_overrides.json before
+# routing — useful for testing proposed wording before changing the MCP server.
 # ---------------------------------------------------------------------------
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_OVERRIDES_FILE = REPO_ROOT / "description_overrides.json"
+
+
+def description_overrides_enabled() -> bool:
+    """Return True when evals should patch tool descriptions before routing."""
+    if os.environ.get("DESCRIPTION_OVERRIDES_FILE"):
+        return True
+    return os.environ.get("USE_DESCRIPTION_OVERRIDES", "").lower() in {"1", "true", "yes"}
+
+
+def resolve_description_overrides_file() -> Path | None:
+    """Return the overrides file path when overrides are enabled."""
+    if not description_overrides_enabled():
+        return None
+
+    env_path = os.environ.get("DESCRIPTION_OVERRIDES_FILE")
+    if env_path:
+        return Path(env_path)
+
+    if DEFAULT_OVERRIDES_FILE.exists():
+        return DEFAULT_OVERRIDES_FILE
+
+    cwd_candidate = Path("description_overrides.json")
+    if cwd_candidate.exists():
+        return cwd_candidate
+
+    return DEFAULT_OVERRIDES_FILE
+
+
+def get_description_override_status() -> dict[str, str | int | None]:
+    """Summarize which tool descriptions the agent sees during evals."""
+    if not description_overrides_enabled():
+        return {"mode": "mcp_server", "file": None, "tool_count": 0}
+
+    overrides = _load_description_overrides()
+    overrides_file = resolve_description_overrides_file()
+    return {
+        "mode": "overrides",
+        "file": str(overrides_file) if overrides_file else None,
+        "tool_count": len(overrides),
+    }
 
 
 def _load_description_overrides() -> dict[str, str]:
     """Return {tool_name: description} from the overrides file, or {} if absent."""
-    env_path = os.environ.get("DESCRIPTION_OVERRIDES_FILE")
-    if env_path:
-        candidates = [Path(env_path)]
-    else:
-        candidates = [
-            Path(__file__).parent.parent / "description_overrides.json",
-            Path("description_overrides.json"),
-        ]
-    for path in candidates:
-        if path.exists():
-            try:
-                data = json.loads(path.read_text())
-                if isinstance(data, dict):
-                    return {k: v for k, v in data.items() if isinstance(v, str)}
-            except Exception:
-                pass
+    if not description_overrides_enabled():
+        return {}
+
+    overrides_file = resolve_description_overrides_file()
+    if overrides_file is None or not overrides_file.exists():
+        return {}
+
+    try:
+        data = json.loads(overrides_file.read_text())
+        if isinstance(data, dict):
+            return {k: v for k, v in data.items() if isinstance(v, str)}
+    except Exception:
+        pass
     return {}
 
 

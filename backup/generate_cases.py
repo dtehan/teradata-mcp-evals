@@ -3,9 +3,9 @@ Bootstrap generator: connects to the MCP server, reads tool descriptions,
 and asks Bedrock Claude to draft one happy_path test case per tool.
 
 Usage:
-    uv run python generate_cases.py                  # all in-scope modules
-    uv run python generate_cases.py --module base    # one module only
-    uv run python generate_cases.py --dry-run        # print without writing
+    uv run python backup/generate_cases.py                  # all in-scope modules
+    uv run python backup/generate_cases.py --module base    # one module only
+    uv run python backup/generate_cases.py --dry-run        # print without writing
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from mcp.client.streamable_http import streamablehttp_client
 
 load_dotenv()
 
-CASES_DIR = Path(__file__).parent / "cases"
+CASES_DIR = Path(__file__).resolve().parent.parent / "cases"
 IN_SCOPE_MODULES = {"base", "dba", "sec", "qlty", "chat", "plot", "tmpl"}
 
 DRAFT_PROMPT = """\
