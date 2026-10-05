@@ -17,6 +17,7 @@ import os
 import sys
 from pathlib import Path
 
+from judge.kinds import competing_tool, kind_of
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -54,6 +55,10 @@ AMBIGUOUS_PAIRS: dict[str, list[tuple[str, str]]] = {
         ("qlty_missingValues", "qlty_rowsWithMissingValues"),
         ("qlty_standardDeviation", "qlty_univariateStatistics"),
         ("qlty_columnSummary", "qlty_univariateStatistics"),
+    ],
+    "plot": [
+        ("plot_line_chart", "plot_radar_chart"),
+        ("plot_pie_chart", "plot_polar_chart"),
     ],
 }
 
@@ -93,30 +98,17 @@ def happy_path_tools(cases: list[dict]) -> set[str]:
 
 
 def covered_ambiguous_pairs(module: str, cases: list[dict]) -> set[frozenset[str]]:
-    pairs = AMBIGUOUS_PAIRS.get(module, [])
-    if not pairs:
-        return set()
-
     covered: set[frozenset[str]] = set()
     for case in cases:
-        if case.get("type") != "ambiguous_selection":
+        if not kind_of(case).has_competitor:
             continue
         expected_tools = case.get("expected_tools", [])
         if not expected_tools:
             continue
         winner = expected_tools[0]["name"]
-        case_id = case.get("id", "")
-        description = case.get("description", "")
-
-        for tool_a, tool_b in pairs:
-            pair = frozenset({tool_a, tool_b})
-            if winner not in pair:
-                continue
-            loser = tool_b if winner == tool_a else tool_a
-            loser_token = loser.split("_", 1)[-1]
-            if loser_token in case_id or loser in description:
-                covered.add(pair)
-
+        loser = competing_tool(case)
+        if loser:
+            covered.add(frozenset({winner, loser}))
     return covered
 
 

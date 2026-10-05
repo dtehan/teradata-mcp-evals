@@ -9,7 +9,15 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
+# Keep EVALS_DATABASE and Bedrock settings from .env. Drop override flags that
+# only existed in .env so a plain pytest run cannot silently patch descriptions.
+_preset_use = os.environ.get("USE_DESCRIPTION_OVERRIDES")
+_preset_file = os.environ.get("DESCRIPTION_OVERRIDES_FILE")
 load_dotenv()
+if _preset_use is None:
+    os.environ.pop("USE_DESCRIPTION_OVERRIDES", None)
+if _preset_file is None:
+    os.environ.pop("DESCRIPTION_OVERRIDES_FILE", None)
 
 CASES_DIR = Path(__file__).parent.parent / "cases"
 MODULES = ["base", "dba", "sec", "qlty", "chat", "plot", "tmpl"]
@@ -30,9 +38,23 @@ def load_cases(module: str) -> list[dict]:
     path = CASES_DIR / f"{module}.json"
     if not path.exists():
         return []
+    from judge.kinds import select_cases
+
     data = json.loads(path.read_text())
-    # Filter out comment/instruction stubs
-    return [c for c in data.get("cases", []) if "id" in c]
+    cases = [c for c in data.get("cases", []) if "id" in c]
+    return select_cases(cases, os.environ.get("EVALS_RUN_TYPE"))
+
+
+_session_overrides = None
+
+
+def _description_overrides():
+    from agent.client import DescriptionOverrides
+
+    global _session_overrides
+    if _session_overrides is None:
+        _session_overrides = DescriptionOverrides(mapping={})
+    return _session_overrides
 
 
 def build_test_case(case: dict, bedrock_client, agent_model_id: str):
@@ -41,7 +63,7 @@ def build_test_case(case: dict, bedrock_client, agent_model_id: str):
 
     evals_db = os.environ.get("EVALS_DATABASE", "").strip()
     resolved = _substitute(case, evals_db)
-    return _build_test_case(resolved, bedrock_client, agent_model_id)
+    return _build_test_case(resolved, bedrock_client, agent_model_id, overrides=_description_overrides())
 
 
 def assert_eval_case(case: dict, bedrock_client, agent_model_id: str, judge_llm) -> None:
@@ -50,7 +72,7 @@ def assert_eval_case(case: dict, bedrock_client, agent_model_id: str, judge_llm)
 
     evals_db = os.environ.get("EVALS_DATABASE", "").strip()
     resolved = _substitute(case, evals_db)
-    _assert_eval_case(resolved, bedrock_client, agent_model_id, judge_llm)
+    _assert_eval_case(resolved, bedrock_client, agent_model_id, judge_llm, overrides=_description_overrides())
 
 
 @pytest.fixture(scope="session")
@@ -73,19 +95,21 @@ def judge_llm(bedrock_client):
 
 def pytest_sessionstart(session) -> None:
     """Initialize eval result collection for live eval runs."""
-    from agent.client import get_description_override_status
+    from agent.client import description_overrides_from_env
     from judge.report import begin_eval_run
 
+    global _session_overrides
+    _session_overrides = description_overrides_from_env()
+    status = _session_overrides.status()
     agent_model_id = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
     judge_model_id = os.environ.get("BEDROCK_JUDGE_MODEL_ID", agent_model_id)
-    override_status = get_description_override_status()
     begin_eval_run(
         agent_model_id=agent_model_id,
         judge_model_id=judge_model_id,
         evals_database=os.environ.get("EVALS_DATABASE", "").strip(),
-        description_mode=str(override_status["mode"]),
-        description_overrides_file=override_status.get("file"),  # type: ignore[arg-type]
-        description_override_count=int(override_status.get("tool_count") or 0),
+        description_mode=str(status["mode"]),
+        description_overrides_file=status.get("file"),  # type: ignore[arg-type]
+        description_override_count=int(status.get("tool_count") or 0),
     )
 
 

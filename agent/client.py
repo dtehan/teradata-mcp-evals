@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -15,75 +16,92 @@ from mcp.client.streamable_http import streamablehttp_client
 
 MAX_TOOL_RESULT_CHARS = int(os.environ.get("MAX_TOOL_RESULT_CHARS", "8000"))
 
-# ---------------------------------------------------------------------------
-# Description overrides (opt-in)
-# ---------------------------------------------------------------------------
-# By default evals use live MCP server tool descriptions (baseline).
-# Set USE_DESCRIPTION_OVERRIDES=1 or pass --with-description-overrides to
-# run_evals.py to patch descriptions from description_overrides.json before
-# routing — useful for testing proposed wording before changing the MCP server.
-# ---------------------------------------------------------------------------
+# Description overrides are a value parsed at the process boundary
+# (run_evals.py / pytest sessionstart) and passed into run_agent.
+# USE_DESCRIPTION_OVERRIDES=1 opts in. DESCRIPTION_OVERRIDES_FILE is only a path.
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OVERRIDES_FILE = REPO_ROOT / "description_overrides.json"
+_OVERRIDE_FLAGS = frozenset({"1", "true", "yes"})
 
 
-def description_overrides_enabled() -> bool:
-    """Return True when evals should patch tool descriptions before routing."""
-    if os.environ.get("DESCRIPTION_OVERRIDES_FILE"):
-        return True
-    return os.environ.get("USE_DESCRIPTION_OVERRIDES", "").lower() in {"1", "true", "yes"}
+@dataclass(frozen=True)
+class DescriptionOverrides:
+    mapping: dict[str, str]
+    source_file: Path | None = None
+
+    @property
+    def active(self) -> bool:
+        return bool(self.mapping)
+
+    def status(self) -> dict[str, str | int | None]:
+        if not self.active:
+            return {"mode": "mcp_server", "file": None, "tool_count": 0}
+        return {
+            "mode": "overrides",
+            "file": str(self.source_file) if self.source_file else None,
+            "tool_count": len(self.mapping),
+        }
 
 
-def resolve_description_overrides_file() -> Path | None:
-    """Return the overrides file path when overrides are enabled."""
-    if not description_overrides_enabled():
-        return None
+def overrides_requested_from_env(environ: Mapping[str, str] | None = None) -> bool:
+    """True only when USE_DESCRIPTION_OVERRIDES is an explicit opt-in flag."""
+    env = os.environ if environ is None else environ
+    return env.get("USE_DESCRIPTION_OVERRIDES", "").lower() in _OVERRIDE_FLAGS
 
-    env_path = os.environ.get("DESCRIPTION_OVERRIDES_FILE")
+
+def resolve_description_overrides_file(environ: Mapping[str, str] | None = None) -> Path:
+    """Return the overrides JSON path. Does not enable overrides by itself."""
+    env = os.environ if environ is None else environ
+    env_path = env.get("DESCRIPTION_OVERRIDES_FILE")
     if env_path:
         return Path(env_path)
-
     if DEFAULT_OVERRIDES_FILE.exists():
         return DEFAULT_OVERRIDES_FILE
-
     cwd_candidate = Path("description_overrides.json")
     if cwd_candidate.exists():
         return cwd_candidate
-
     return DEFAULT_OVERRIDES_FILE
 
 
-def get_description_override_status() -> dict[str, str | int | None]:
-    """Summarize which tool descriptions the agent sees during evals."""
-    if not description_overrides_enabled():
-        return {"mode": "mcp_server", "file": None, "tool_count": 0}
-
-    overrides = _load_description_overrides()
-    overrides_file = resolve_description_overrides_file()
-    return {
-        "mode": "overrides",
-        "file": str(overrides_file) if overrides_file else None,
-        "tool_count": len(overrides),
-    }
-
-
-def _load_description_overrides() -> dict[str, str]:
-    """Return {tool_name: description} from the overrides file, or {} if absent."""
-    if not description_overrides_enabled():
-        return {}
-
-    overrides_file = resolve_description_overrides_file()
-    if overrides_file is None or not overrides_file.exists():
-        return {}
-
+def load_description_overrides_file(path: Path) -> dict[str, str]:
+    """Parse a non-empty {tool_name: description} object. Raise on missing or invalid files."""
+    if not path.exists():
+        raise FileNotFoundError(f"Description overrides file not found: {path}")
     try:
-        data = json.loads(overrides_file.read_text())
-        if isinstance(data, dict):
-            return {k: v for k, v in data.items() if isinstance(v, str)}
-    except Exception:
-        pass
-    return {}
+        data = json.loads(path.read_text())
+    except Exception as exc:
+        raise ValueError(f"Invalid description overrides JSON: {path}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"Description overrides must be a JSON object: {path}")
+    mapping = {
+        key: value
+        for key, value in data.items()
+        if isinstance(key, str) and isinstance(value, str) and not key.startswith("_")
+    }
+    if not mapping:
+        raise ValueError(f"Description overrides file has no tool descriptions: {path}")
+    return mapping
+
+
+def description_overrides_from_env(environ: Mapping[str, str] | None = None) -> DescriptionOverrides:
+    """Parse override request at the process boundary. Empty when not opted in."""
+    env = os.environ if environ is None else environ
+    if not overrides_requested_from_env(env):
+        return DescriptionOverrides(mapping={})
+    path = resolve_description_overrides_file(env)
+    mapping = load_description_overrides_file(path)
+    return DescriptionOverrides(mapping=mapping, source_file=path)
+
+
+def get_description_override_status(
+    overrides: DescriptionOverrides | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, str | int | None]:
+    """Summarize which tool descriptions the agent will see."""
+    resolved = overrides if overrides is not None else description_overrides_from_env(environ)
+    return resolved.status()
 
 
 def _apply_description_overrides(tools: list, overrides: dict[str, str]) -> list:
@@ -204,14 +222,15 @@ async def _run_agent_turns_async(
     bedrock_client,
     mcp_url: str,
     max_steps_per_turn: int,
+    overrides: DescriptionOverrides | None = None,
 ) -> list[TurnResult]:
     """Run a scripted multi-turn conversation in one MCP session."""
-    overrides = _load_description_overrides()
+    mapping = overrides.mapping if overrides is not None else {}
     async with streamablehttp_client(mcp_url) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools_response = await session.list_tools()
-            patched_tools = _apply_description_overrides(tools_response.tools, overrides)
+            patched_tools = _apply_description_overrides(tools_response.tools, mapping)
             bedrock_tools = [_mcp_tool_to_bedrock(t) for t in patched_tools]
 
             messages: list[dict] = []
@@ -263,13 +282,14 @@ async def _run_agent_async(
     bedrock_client,
     mcp_url: str,
     max_steps: int,
+    overrides: DescriptionOverrides | None = None,
 ) -> AgentResult:
-    overrides = _load_description_overrides()
+    mapping = overrides.mapping if overrides is not None else {}
     async with streamablehttp_client(mcp_url) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools_response = await session.list_tools()
-            patched_tools = _apply_description_overrides(tools_response.tools, overrides)
+            patched_tools = _apply_description_overrides(tools_response.tools, mapping)
             bedrock_tools = [_mcp_tool_to_bedrock(t) for t in patched_tools]
 
             messages: list[dict] = [
@@ -315,6 +335,7 @@ def run_agent(
     bedrock_client=None,
     mcp_url: str | None = None,
     max_steps: int | None = None,
+    overrides: DescriptionOverrides | None = None,
 ) -> AgentResult:
     """Synchronous entry point — runs the async agent loop via asyncio.run()."""
     resolved_model = model_id or os.environ.get(
@@ -335,6 +356,7 @@ def run_agent(
             bedrock_client=bedrock_client,
             mcp_url=resolved_url,
             max_steps=resolved_steps,
+            overrides=overrides,
         )
     )
 
@@ -345,6 +367,7 @@ def run_agent_turns(
     bedrock_client=None,
     mcp_url: str | None = None,
     max_steps_per_turn: int | None = None,
+    overrides: DescriptionOverrides | None = None,
 ) -> list[TurnResult]:
     """Run a shallow multi-turn conversation (separate tool-call budget per turn)."""
     if not prompts:
@@ -368,5 +391,6 @@ def run_agent_turns(
             bedrock_client=bedrock_client,
             mcp_url=resolved_url,
             max_steps_per_turn=resolved_steps,
+            overrides=overrides,
         )
     )

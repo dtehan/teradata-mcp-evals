@@ -1,6 +1,9 @@
 """Unit tests for deterministic structural checks."""
 
+import pytest
+
 from judge.checks import ToolCallRecord, assert_deterministic_checks, run_deterministic_checks
+from judge.kinds import CLARIFICATION, TOOL_TURN, kind_of, select_cases
 
 
 def _call(name: str, **params) -> ToolCallRecord:
@@ -80,3 +83,54 @@ def test_assert_raises_on_failure():
         raise AssertionError("expected assertion")
     except AssertionError as exc:
         assert "bad" in str(exc)
+
+
+
+def test_clarification_kind_rejects_tools_without_rewriting_type():
+    case = {"id": "turn", "expected_tools": []}
+    errors = run_deterministic_checks(case, [_call("base_readQuery", sql="SELECT 1")], kind=CLARIFICATION)
+    assert len(errors) == 1
+    assert "no tool calls" in errors[0]
+
+
+def test_tool_turn_kind_checks_primary_tool():
+    case = {
+        "id": "turn",
+        "expected_tools": [{"name": "base_tableList", "params": {"database_name": "mydb"}}],
+    }
+    assert not run_deterministic_checks(
+        case,
+        [_call("base_tableList", database_name="mydb")],
+        kind=TOOL_TURN,
+    )
+
+
+
+def test_get_metrics_skips_tool_kinds():
+    from judge.metrics import get_metrics
+
+    for case_type in ("happy_path", "ambiguous_selection", "multi_tool", "multi_turn"):
+        case = {"type": case_type}
+        if case_type == "multi_turn":
+            case["turns"] = []
+        assert get_metrics(case, judge_llm=None) == []
+
+
+def test_select_cases_uses_the_type_field_not_the_id():
+    cases = [
+        {
+            "id": "sec_user_missing_role_clarify_then_call",
+            "type": "multi_turn",
+            "turns": [],
+        },
+        {"id": "base_read_missing_sql", "type": "missing_parameter"},
+    ]
+    assert [case["id"] for case in select_cases(cases, "missing_parameter")] == ["base_read_missing_sql"]
+    assert [case["id"] for case in select_cases(cases, "multi_turn")] == [
+        "sec_user_missing_role_clarify_then_call"
+    ]
+
+
+def test_kind_of_rejects_turns_on_the_wrong_type():
+    with pytest.raises(ValueError, match="only valid when type is multi_turn"):
+        kind_of({"id": "bad", "type": "missing_parameter", "turns": []})

@@ -17,17 +17,9 @@ import subprocess
 import sys
 
 from preflight import run_preflight
-from agent.client import description_overrides_enabled, resolve_description_overrides_file
+from agent.client import description_overrides_from_env
+from judge.kinds import KINDS
 from judge.report import format_run_index, load_latest_pointer
-
-
-CASE_TYPE_FILTERS = {
-    "happy_path": "happy",
-    "ambiguous_selection": "ambiguous",
-    "missing_parameter": "missing",
-    "multi_tool": "multi_tool",
-    "multi_turn": "clarify_then_call",
-}
 
 
 def main() -> None:
@@ -37,8 +29,8 @@ def main() -> None:
         "--type",
         dest="case_type",
         help=(
-            "Filter by case type (happy_path, ambiguous_selection, missing_parameter, "
-            "multi_tool, multi_turn). Matches substrings in pytest case IDs."
+            "Filter by the case type field "
+            "(happy_path, ambiguous_selection, missing_parameter, multi_tool, multi_turn)."
         ),
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose pytest output")
@@ -83,6 +75,11 @@ def main() -> None:
     if not args.skip_preflight:
         run_preflight()
 
+    if args.case_type and args.case_type not in KINDS:
+        parser.error(
+            f"unknown case type {args.case_type!r}; expected one of {', '.join(KINDS)}",
+        )
+
     os.environ["EVALS_RUN_MODULE"] = args.module or "all"
     os.environ["EVALS_RUN_TYPE"] = args.case_type or "all"
     if args.run_label:
@@ -100,21 +97,16 @@ def main() -> None:
     if args.module:
         cmd += ["-k", f"test_{args.module}"]
 
-    if args.case_type:
-        keyword = CASE_TYPE_FILTERS.get(args.case_type, args.case_type)
-        existing_k = next((cmd[i + 1] for i, c in enumerate(cmd) if c == "-k"), None)
-        if existing_k:
-            idx = cmd.index("-k")
-            cmd[idx + 1] = f"{existing_k} and {keyword}"
-        else:
-            cmd += ["-k", keyword]
-
     if args.verbose:
         cmd.append("-v")
 
-    if description_overrides_enabled():
-        overrides_file = resolve_description_overrides_file()
-        print(f"Tool descriptions: overrides from {overrides_file}")
+    try:
+        overrides = description_overrides_from_env()
+    except (FileNotFoundError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    if overrides.active:
+        print(f"Tool descriptions: overrides from {overrides.source_file} ({len(overrides.mapping)} tools)")
     else:
         print("Tool descriptions: live MCP server (baseline)")
 

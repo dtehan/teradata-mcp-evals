@@ -41,7 +41,8 @@ agent/
 judge/
   bedrock_llm.py      # DeepEvalBaseLLM wrapper for Bedrock Converse API
   checks.py           # Deterministic structural checks (fail before LLM judge)
-  metrics.py          # ToolCorrectnessMetric + Clarification GEval
+  kinds.py            # Case type table, CLI filters, stored competitor
+  metrics.py          # Clarification GEval only
   report.py           # Eval summaries → results/latest_summary.*
   suggest_overrides.py # LLM draft overrides from failed ambiguous_selection cases
 cases/
@@ -92,15 +93,17 @@ pyproject.toml        # Project metadata, Ruff config, pytest paths
 | **Tear down test data** | `python teardown_test_data.py` |
 | **Package script** | `run-evals` (installed via `[project.scripts]` in `pyproject.toml`) |
 
-### `--type` filter keywords (maps to pytest `-k` on case IDs)
+### `--type` filter
 
-| `--type` | Matches IDs containing |
-|----------|------------------------|
-| `happy_path` | `happy` |
-| `ambiguous_selection` | `ambiguous` |
-| `missing_parameter` | `missing` |
+`--type` keeps cases whose `type` field equals the flag. It does not match substrings of the case id.
+
+| `--type` | Case `type` field |
+|----------|-------------------|
+| `happy_path` | `happy_path` |
+| `ambiguous_selection` | `ambiguous_selection` |
+| `missing_parameter` | `missing_parameter` |
 | `multi_tool` | `multi_tool` |
-| `multi_turn` | `clarify_then_call` |
+| `multi_turn` | `multi_turn` |
 
 ## CODING STANDARDS
 
@@ -151,10 +154,10 @@ pyproject.toml        # Project metadata, Ruff config, pytest paths
 
 1. Test loads case from `cases/<module>.json` via `load_cases()`.
 2. `{EVALS_DATABASE}` placeholder substituted at runtime.
-3. **Single-turn:** `run_agent()` → deterministic checks → deepeval metrics.
+3. **Single-turn:** `run_agent()` → deterministic checks. `missing_parameter` then runs Clarification GEval.
 4. **Multi-turn:** `run_agent_turns()` (one MCP session, max 7 turns) → per-turn checks:
    - Clarification turns: no tools + Clarification GEval
-   - Tool turns: deterministic checks + ToolCorrectnessMetric
+   - Tool turns: deterministic checks for the expected tool
 5. Structural failures in `judge/checks.py` raise `AssertionError` before the judge runs.
 6. Outcomes recorded under `results/runs/<run_id>/` via `judge/report.py`.
 
@@ -162,11 +165,13 @@ pyproject.toml        # Project metadata, Ruff config, pytest paths
 
 **Single-turn:** top-level `input`, `type`, `expected_tools`.
 
-**Multi-turn:** top-level `turns` (2–7 entries), each with `input` and exactly one of:
+**Multi-turn:** `"type": "multi_turn"` and top-level `turns` (2–7 entries), each with `input` and exactly one of:
 - `"expect": "clarification"`
 - `"expected_tools": [...]`
 
-Multi-turn case IDs should contain `clarify_then_call` for `--type multi_turn` filtering.
+**Ambiguous selection:** `"competing_tool"` names the other tool in the pair. Do not infer it from the id or description.
+
+Multi-turn case ids often contain `clarify_then_call`. `--type multi_turn` selects them by the `type` field.
 
 Param names in `expected_tools` must match live MCP schemas (e.g. `sql` for `base_readQuery`, `user_name` for sec tools). Use `{EVALS_DATABASE}.evals_*` tables for deterministic grounding in base, qlty, plot, and dba cases where applicable.
 

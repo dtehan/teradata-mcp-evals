@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from judge.kinds import Kind, kind_of
+
 # Param values compared exactly when non-empty in the expected case.
 EXACT_VALUE_KEYS = frozenset(
     {
@@ -67,19 +69,21 @@ def _check_tool_pair(
 def run_deterministic_checks(
     case: dict,
     tools_called: list[ToolCallRecord],
+    *,
+    kind: Kind | None = None,
 ) -> list[str]:
     """Return a list of structural check failures (empty list means pass)."""
-    case_type = case.get("type", "happy_path")
+    resolved = kind if kind is not None else kind_of(case)
     expected_raw = case.get("expected_tools", [])
     expected = [
         ToolCallRecord(name=t["name"], input_parameters=t.get("params", {}))
         for t in expected_raw
     ]
 
-    if case_type == "missing_parameter":
+    if not resolved.expects_tool_calls:
         if tools_called:
             names = [tc.name for tc in tools_called]
-            return [f"expected no tool calls for missing_parameter case, got {names}"]
+            return [f"expected no tool calls for {resolved.name} case, got {names}"]
         return []
 
     if not expected:
@@ -87,10 +91,10 @@ def run_deterministic_checks(
 
     errors: list[str] = []
 
-    if case_type == "multi_tool":
+    if resolved.ordered:
         if len(tools_called) != len(expected):
             errors.append(
-                f"multi_tool: expected {len(expected)} tool call(s), got {len(tools_called)}",
+                f"{resolved.name}: expected {len(expected)} tool call(s), got {len(tools_called)}",
             )
             return errors
         for i, (exp, act) in enumerate(zip(expected, tools_called, strict=True)):

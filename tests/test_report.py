@@ -18,7 +18,8 @@ from judge.report import (
 def test_build_recommendation_ambiguous_selection():
     case = {
         "type": "ambiguous_selection",
-        "description": "Prompt with a WHERE clause should use base_readQuery, not base_tablePreview",
+        "competing_tool": "base_tablePreview",
+        "description": "Prompt with a WHERE clause should use base_readQuery",
         "input": "Get orders where amount > 500",
     }
     recommendation = build_recommendation(

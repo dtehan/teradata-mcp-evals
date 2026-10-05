@@ -14,9 +14,9 @@ from dotenv import load_dotenv
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
+from judge.kinds import kind_of, competing_tool
 from judge.report import (
     RESULTS_DIR,
-    _competing_tool_hint,
     resolve_default_summary_path,
     resolve_suggestion_output_path,
     run_dir_for_summary_path,
@@ -27,7 +27,7 @@ load_dotenv()
 DEFAULT_SUMMARY_PATH = RESULTS_DIR / "latest_summary.json"
 DEFAULT_OUTPUT_PATH = RESULTS_DIR / "suggested_overrides.json"
 
-DEFAULT_CASE_TYPES = frozenset({"ambiguous_selection", "happy_path", "missing_parameter", "multi_tool"})
+DEFAULT_CASE_TYPES = frozenset({"ambiguous_selection", "happy_path", "missing_parameter", "multi_tool", "multi_turn"})
 
 AMBIGUOUS_PROMPT = """\
 You are improving MCP tool descriptions so an AI agent routes user requests to the correct tool.
@@ -222,9 +222,9 @@ def tool_pair_for_case(case: dict[str, Any]) -> tuple[str, str] | None:
     if actual and actual != expected:
         return expected, actual
 
-    competing = _competing_tool_hint(case.get("description", ""), expected)
-    if competing and competing != expected:
-        return expected, competing
+    stored = competing_tool(case)
+    if stored and stored != expected:
+        return expected, stored
 
     if actual:
         return expected, actual
@@ -281,28 +281,19 @@ def _tool_description_block(tool_names: list[str], live_descriptions: dict[str, 
 
 def tools_for_case(case: dict[str, Any]) -> list[str]:
     """Return tool names whose descriptions should be revised for this failure."""
-    case_type = case.get("case_type", "happy_path")
+    kind = kind_of(case)
     expected = _tool_names_from_blocks(case.get("expected_tools"))
     actual = _tool_names_from_blocks(case.get("actual_tools"))
 
-    if case_type == "ambiguous_selection":
+    if kind.has_competitor:
         pair = tool_pair_for_case(case)
         return list(pair) if pair else []
 
-    if case_type == "happy_path":
-        names = list(dict.fromkeys(expected + [n for n in actual if n not in expected]))
-        return names or expected
+    if not kind.expects_tool_calls:
+        return actual
 
-    if case_type == "missing_parameter":
-        if actual:
-            return actual
-        # Clarification-only failure with no tool calls — nothing to patch in descriptions.
-        return []
-
-    if case_type == "multi_tool":
-        return list(dict.fromkeys(expected + [n for n in actual if n not in expected]))
-
-    return []
+    names = list(dict.fromkeys(expected + [n for n in actual if n not in expected]))
+    return names or actual
 
 
 def build_case_plan(
@@ -312,17 +303,18 @@ def build_case_plan(
     existing_overrides: dict[str, str],
 ) -> CaseSuggestionPlan | None:
     """Build the Bedrock prompt plan for one failed case, or None if not actionable."""
-    case_id = case.get("case_id", "<unknown>")
-    case_type = case.get("case_type", "happy_path")
+    case_id = case.get("case_id") or case.get("id") or "<unknown>"
+    kind = kind_of(case)
+    case_type = kind.name
     tool_names = tools_for_case(case)
 
-    if case_type == "missing_parameter" and not tool_names:
+    if not kind.expects_tool_calls and not tool_names:
         return CaseSuggestionPlan(
             case_id=case_id,
             case_type=case_type,
             tool_names=[],
             prompt="",
-            skip_reason="No tool calls to address — failure is clarification wording, not tool routing.",
+            skip_reason="No tool calls to address. Failure is clarification wording, not tool routing.",
         )
 
     if not tool_names:
@@ -339,7 +331,7 @@ def build_case_plan(
         "tool_list": _format_tool_list(tool_names),
     }
 
-    if case_type == "ambiguous_selection":
+    if kind.has_competitor:
         expected_tool, actual_tool = tool_names[0], tool_names[1]
         prompt = AMBIGUOUS_PROMPT.format(
             expected_tool=expected_tool,
@@ -348,27 +340,25 @@ def build_case_plan(
             actual_description=live_descriptions.get(actual_tool, "(no description on MCP server)"),
             **common,
         )
-    elif case_type == "happy_path":
-        expected_tool = _tool_name(case.get("expected_tools"))
-        prompt = HAPPY_PATH_PROMPT.format(
-            expected_tool=expected_tool,
-            actual_tools_summary=_format_tools_summary(case.get("actual_tools")),
-            **common,
-        )
-    elif case_type == "missing_parameter":
+    elif not kind.expects_tool_calls:
         prompt = MISSING_PARAMETER_PROMPT.format(
             actual_tools_summary=_format_tools_summary(case.get("actual_tools")),
             turn_details_block=_turn_details_block(case),
             **common,
         )
-    elif case_type == "multi_tool":
+    elif kind.ordered:
         prompt = MULTI_TOOL_PROMPT.format(
             expected_tools_summary=_format_tools_summary(case.get("expected_tools")),
             actual_tools_summary=_format_tools_summary(case.get("actual_tools")),
             **common,
         )
     else:
-        return None
+        expected_tool = _tool_name(case.get("expected_tools"))
+        prompt = HAPPY_PATH_PROMPT.format(
+            expected_tool=expected_tool,
+            actual_tools_summary=_format_tools_summary(case.get("actual_tools")),
+            **common,
+        )
 
     return CaseSuggestionPlan(
         case_id=case_id,

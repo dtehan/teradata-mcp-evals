@@ -2,12 +2,13 @@
 
 import pytest
 
-from tests.case_runner import MAX_TURNS, validate_multi_turn_case
+from tests.case_runner import MAX_TURNS, validate_eval_case, validate_multi_turn_case
 
 
 def test_valid_two_turn_case():
     case = {
         "id": "example",
+        "type": "multi_turn",
         "turns": [
             {"input": "Preview some rows", "expect": "clarification"},
             {
@@ -16,7 +17,7 @@ def test_valid_two_turn_case():
             },
         ],
     }
-    validate_multi_turn_case(case)
+    validate_eval_case(case)
 
 
 def test_rejects_single_turn():
@@ -57,5 +58,38 @@ def test_rejects_turn_with_both_modes():
                     },
                     {"input": "again", "expected_tools": [{"name": "base_tablePreview", "params": {}}]},
                 ],
+            }
+        )
+
+
+def test_turns_require_multi_turn_type():
+    with pytest.raises(ValueError, match="only valid when type is multi_turn"):
+        validate_eval_case(
+            {
+                "id": "bad",
+                "type": "missing_parameter",
+                "turns": [
+                    {"input": "Preview some rows", "expect": "clarification"},
+                    {
+                        "input": "Preview mydb.e",
+                        "expected_tools": [{"name": "base_tablePreview", "params": {}}],
+                    },
+                ],
+            }
+        )
+
+
+def test_multi_turn_without_turns_is_rejected():
+    with pytest.raises(ValueError, match="require a turns array"):
+        validate_eval_case({"id": "bad", "type": "multi_turn"})
+
+
+def test_ambiguous_selection_requires_competing_tool():
+    with pytest.raises(ValueError, match="require competing_tool"):
+        validate_eval_case(
+            {
+                "id": "bad",
+                "type": "ambiguous_selection",
+                "expected_tools": [{"name": "plot_line_chart", "params": {}}],
             }
         )

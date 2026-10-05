@@ -23,7 +23,8 @@
           "name": "qlty_missingValues",
           "params": {}
         }
-      ]
+      ],
+      "competing_tool": "qlty_rowsWithMissingValues"
     },
     {
       "id": "qlty_negativeValues_happy",
@@ -84,7 +85,8 @@
             "column_name": "salary"
           }
         }
-      ]
+      ],
+      "competing_tool": "qlty_univariateStatistics"
     },
     {
       "id": "qlty_columnSummary_happy",
@@ -124,7 +126,8 @@
             "column_name": "amount"
           }
         }
-      ]
+      ],
+      "competing_tool": "qlty_columnSummary"
     },
     {
       "id": "qlty_rowsWithMissingValues_happy",
@@ -152,7 +155,8 @@
             "column_name": "ship_date"
           }
         }
-      ]
+      ],
+      "competing_tool": "qlty_missingValues"
     },
     {
       "id": "qlty_multi_tool_summary_then_nulls",

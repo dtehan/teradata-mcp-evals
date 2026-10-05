@@ -9,9 +9,10 @@ from deepeval.evaluate.configs import CacheConfig, DisplayConfig, ErrorConfig
 from deepeval.evaluate.execute import execute_test_cases
 from deepeval.test_case import LLMTestCase, ToolCall
 
-from agent.client import run_agent, run_agent_turns
+from agent.client import DescriptionOverrides, run_agent, run_agent_turns
 from judge.checks import ToolCallRecord, run_deterministic_checks
-from judge.metrics import clarification_metric, get_metrics, tool_correctness_metric
+from judge.kinds import CLARIFICATION, TOOL_TURN, competing_tool, kind_of
+from judge.metrics import get_metrics
 from judge.report import CaseEvalResult, build_recommendation, record_case_result
 
 MAX_TURNS = 7
@@ -42,6 +43,16 @@ def validate_multi_turn_case(case: dict) -> None:
             )
         if "input" not in turn:
             raise ValueError(f"[{case.get('id')}] turn {index} is missing 'input'")
+
+
+def validate_eval_case(case: dict) -> None:
+    """Reject type/turns/competitor combinations the Kind table does not allow."""
+    kind = kind_of(case)
+    label = case.get("id", "<unknown>")
+    if kind.has_competitor and not competing_tool(case):
+        raise ValueError(f"[{label}] {kind.name} cases require competing_tool")
+    if kind.has_turns:
+        validate_multi_turn_case(case)
 
 
 def _to_tool_calls(records: list[ToolCallRecord]) -> list[ToolCall]:
@@ -129,6 +140,7 @@ def _failure_result(
         metric_reasons=metric_reasons,
         recommendation=recommendation,
         turn_details=turn_details,
+        competing_tool=competing_tool(case),
     )
 
 
@@ -151,13 +163,20 @@ def _success_result(
         actual_tools=actual_tools,
         actual_output=actual_output,
         turn_details=turn_details,
+        competing_tool=competing_tool(case),
     )
 
 
-def run_single_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_llm) -> CaseEvalResult:
+def run_single_turn_case(
+    case: dict,
+    bedrock_client,
+    agent_model_id: str,
+    judge_llm,
+    overrides: DescriptionOverrides | None = None,
+) -> CaseEvalResult:
     """Run a single-turn case and return a structured result."""
-    validate_multi_turn_case(case)
-    if "turns" in case:
+    validate_eval_case(case)
+    if kind_of(case).has_turns:
         raise ValueError(f"[{case.get('id')}] use run_eval_case() for multi-turn cases")
 
     try:
@@ -165,6 +184,7 @@ def run_single_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_
             prompt=case["input"],
             model_id=agent_model_id,
             bedrock_client=bedrock_client,
+            overrides=overrides,
         )
     except Exception as exc:
         return _failure_result(
@@ -196,7 +216,11 @@ def run_single_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_
         tools_called=raw_calls,
         expected_tools_raw=case.get("expected_tools", []),
     )
-    metric_reasons, passed = _evaluate_metrics(test_case, get_metrics(case, judge_llm))
+    metrics = get_metrics(case, judge_llm)
+    if metrics:
+        metric_reasons, passed = _evaluate_metrics(test_case, metrics)
+    else:
+        metric_reasons, passed = [], True
     if not passed:
         return _failure_result(
             case,
@@ -217,9 +241,15 @@ def run_single_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_
     )
 
 
-def run_multi_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_llm) -> CaseEvalResult:
+def run_multi_turn_case(
+    case: dict,
+    bedrock_client,
+    agent_model_id: str,
+    judge_llm,
+    overrides: DescriptionOverrides | None = None,
+) -> CaseEvalResult:
     """Run and score a shallow multi-turn case (2–7 turns)."""
-    validate_multi_turn_case(case)
+    validate_eval_case(case)
     turns = case["turns"]
     prompts = [turn["input"] for turn in turns]
     case_input = " | ".join(f"Turn {index}: {turn['input']}" for index, turn in enumerate(turns, start=1))
@@ -231,6 +261,7 @@ def run_multi_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_l
             model_id=agent_model_id,
             bedrock_client=bedrock_client,
             max_steps_per_turn=max_steps_per_turn,
+            overrides=overrides,
         )
     except Exception as exc:
         return _failure_result(
@@ -254,8 +285,8 @@ def run_multi_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_l
         turn_input = f"{conversation_prefix}User: {turn_spec['input']}"
 
         if turn_spec.get("expect") == "clarification":
-            pseudo_case = {"id": turn_label, "type": "missing_parameter", "expected_tools": []}
-            det_errors = run_deterministic_checks(pseudo_case, raw_calls)
+            pseudo_case = {"id": turn_label, "expected_tools": []}
+            det_errors = run_deterministic_checks(pseudo_case, raw_calls, kind=CLARIFICATION)
             if det_errors:
                 turn_details.append(
                     {
@@ -285,15 +316,14 @@ def run_multi_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_l
                 tools_called=[],
                 expected_tools_raw=[],
             )
-            metric_reasons, passed = _evaluate_metrics(test_case, [clarification_metric(judge_llm)])
+            metric_reasons, passed = _evaluate_metrics(test_case, get_metrics(pseudo_case, judge_llm, kind=CLARIFICATION))
         else:
             expected_tools = turn_spec.get("expected_tools", [])
             pseudo_case = {
                 "id": turn_label,
-                "type": "happy_path",
                 "expected_tools": expected_tools,
             }
-            det_errors = run_deterministic_checks(pseudo_case, raw_calls)
+            det_errors = run_deterministic_checks(pseudo_case, raw_calls, kind=TOOL_TURN)
             if det_errors:
                 turn_details.append(
                     {
@@ -324,7 +354,11 @@ def run_multi_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_l
                 tools_called=raw_calls,
                 expected_tools_raw=expected_tools,
             )
-            metric_reasons, passed = _evaluate_metrics(test_case, [tool_correctness_metric(judge_llm)])
+            metrics = get_metrics(pseudo_case, judge_llm, kind=TOOL_TURN)
+            if metrics:
+                metric_reasons, passed = _evaluate_metrics(test_case, metrics)
+            else:
+                metric_reasons, passed = [], True
 
         if not passed:
             turn_details.append(
@@ -377,24 +411,36 @@ def run_multi_turn_case(case: dict, bedrock_client, agent_model_id: str, judge_l
     )
 
 
-def run_eval_case(case: dict, bedrock_client, agent_model_id: str, judge_llm) -> CaseEvalResult:
+def run_eval_case(
+    case: dict,
+    bedrock_client,
+    agent_model_id: str,
+    judge_llm,
+    overrides: DescriptionOverrides | None = None,
+) -> CaseEvalResult:
     """Run any eval case and return a structured result."""
-    validate_multi_turn_case(case)
-    if "turns" in case:
-        return run_multi_turn_case(case, bedrock_client, agent_model_id, judge_llm)
-    return run_single_turn_case(case, bedrock_client, agent_model_id, judge_llm)
+    validate_eval_case(case)
+    if kind_of(case).has_turns:
+        return run_multi_turn_case(case, bedrock_client, agent_model_id, judge_llm, overrides=overrides)
+    return run_single_turn_case(case, bedrock_client, agent_model_id, judge_llm, overrides=overrides)
 
 
-def build_test_case(case: dict, bedrock_client, agent_model_id: str) -> LLMTestCase:
+def build_test_case(
+    case: dict,
+    bedrock_client,
+    agent_model_id: str,
+    overrides: DescriptionOverrides | None = None,
+) -> LLMTestCase:
     """Run a single-turn case and return a deepeval LLMTestCase (metrics not scored)."""
-    validate_multi_turn_case(case)
-    if "turns" in case:
+    validate_eval_case(case)
+    if kind_of(case).has_turns:
         raise ValueError(f"[{case.get('id')}] use assert_eval_case() for multi-turn cases")
 
     agent_result = run_agent(
         prompt=case["input"],
         model_id=agent_model_id,
         bedrock_client=bedrock_client,
+        overrides=overrides,
     )
     raw_calls = [
         ToolCallRecord(name=tc.name, input_parameters=tc.input_parameters)
@@ -413,9 +459,15 @@ def build_test_case(case: dict, bedrock_client, agent_model_id: str) -> LLMTestC
     )
 
 
-def assert_eval_case(case: dict, bedrock_client, agent_model_id: str, judge_llm) -> None:
+def assert_eval_case(
+    case: dict,
+    bedrock_client,
+    agent_model_id: str,
+    judge_llm,
+    overrides: DescriptionOverrides | None = None,
+) -> None:
     """Run and score any eval case (single- or multi-turn)."""
-    result = run_eval_case(case, bedrock_client, agent_model_id, judge_llm)
+    result = run_eval_case(case, bedrock_client, agent_model_id, judge_llm, overrides=overrides)
     record_case_result(result)
     if not result.passed:
         detail = result.failure_detail or "; ".join(result.metric_reasons) or "eval case failed"

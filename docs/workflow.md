@@ -49,13 +49,15 @@ python run_evals.py --list-runs                       # show recent runs
 
 ### `--type` filter
 
-| Value | Matches case IDs containing |
+`--type` keeps cases whose `type` field equals the value.
+
+| Value | Case `type` |
 |---|---|
-| `happy_path` | `happy` |
-| `ambiguous_selection` | `ambiguous` |
-| `missing_parameter` | `missing` |
+| `happy_path` | `happy_path` |
+| `ambiguous_selection` | `ambiguous_selection` |
+| `missing_parameter` | `missing_parameter` |
 | `multi_tool` | `multi_tool` |
-| `multi_turn` | `clarify_then_call` |
+| `multi_turn` | `multi_turn` |
 
 Advanced filtering via deepeval/pytest, e.g. `deepeval test run tests/ -k "test_base and tablePreview"`.
 

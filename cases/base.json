@@ -27,7 +27,8 @@
             "sql": "SELECT * FROM {EVALS_DATABASE}.evals_orders WHERE amount > 500"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_tablePreview"
     },
     {
       "id": "base_readQuery_missing_sql",
@@ -85,7 +86,8 @@
             "table_name": "evals_employees"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_columnMetadata"
     },
     {
       "id": "base_columnMetadata_happy",
@@ -115,7 +117,8 @@
             "object_name": "evals_employees"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_tableDDL"
     },
     {
       "id": "base_tablePreview_happy",
@@ -145,7 +148,8 @@
             "table_name": "evals_orders"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_readQuery"
     },
     {
       "id": "base_databaseList_happy",
@@ -171,7 +175,8 @@
             "database_name": "{EVALS_DATABASE}"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_databaseList"
     },
     {
       "id": "base_databaseList_ambiguous_vs_tableList",
@@ -183,7 +188,8 @@
           "name": "base_databaseList",
           "params": {}
         }
-      ]
+      ],
+      "competing_tool": "base_tableList"
     },
     {
       "id": "base_saveDDL_ambiguous_vs_tableDDL",
@@ -198,7 +204,8 @@
             "table_name": "evals_orders"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_tableDDL"
     },
     {
       "id": "base_tableAffinity_ambiguous_vs_tableUsage",
@@ -213,7 +220,8 @@
             "table_name": "evals_employees"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_tableUsage"
     },
     {
       "id": "base_tableUsage_ambiguous_vs_tableAffinity",
@@ -227,7 +235,8 @@
             "database_name": "{EVALS_DATABASE}"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_tableAffinity"
     },
     {
       "id": "base_saveDDL_happy",
@@ -339,7 +348,7 @@
     },
     {
       "id": "base_tablePreview_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which table to preview, then calls base_tablePreview after user clarifies",
       "turns": [
         {
@@ -362,7 +371,7 @@
     },
     {
       "id": "base_tableList_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which database, then calls base_tableList after user clarifies",
       "turns": [
         {
@@ -384,7 +393,7 @@
     },
     {
       "id": "base_readQuery_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks for SQL, then calls base_readQuery after user provides the query",
       "turns": [
         {
@@ -432,7 +441,8 @@
             "table_name": "evals_orders"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_columnMetadata"
     },
     {
       "id": "base_columnMetadata_ambiguous_vs_columnDescription",
@@ -447,7 +457,8 @@
             "object_name": "evals_employees"
           }
         }
-      ]
+      ],
+      "competing_tool": "base_columnDescription"
     },
     {
       "id": "base_unknown_tool_missing",

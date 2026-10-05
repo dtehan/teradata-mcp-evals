@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from judge.kinds import competing_tool as stored_competitor, kind_of
+
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 RUNS_DIR = RESULTS_DIR / "runs"
 LATEST_POINTER_FILE = RESULTS_DIR / "latest.json"
@@ -32,6 +34,7 @@ class CaseEvalResult:
     metric_reasons: list[str] = field(default_factory=list)
     recommendation: str | None = None
     turn_details: list[dict[str, Any]] | None = None
+    competing_tool: str | None = None
 
 
 @dataclass
@@ -107,23 +110,6 @@ def _tool_names(tools: list[dict[str, Any]] | None) -> list[str]:
     return [tool["name"] for tool in tools]
 
 
-def _competing_tool_hint(description: str, expected_tool: str) -> str | None:
-    patterns = [
-        rf"\bnot\s+({expected_tool.split('_', 1)[0]}_\w+)\b",
-        rf"\bover\s+({expected_tool.split('_', 1)[0]}_\w+)\b",
-        rf"\bvs\.?\s+({expected_tool.split('_', 1)[0]}_\w+)\b",
-        rf"\binstead of\s+({expected_tool.split('_', 1)[0]}_\w+)\b",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, description, flags=re.IGNORECASE)
-        if match:
-            return match.group(1)
-    generic = re.search(r"\b(base|dba|sec|qlty|chat|plot|tmpl)_\w+\b", description)
-    if generic and generic.group(0) != expected_tool:
-        return generic.group(0)
-    return None
-
-
 def build_recommendation(
     case: dict,
     *,
@@ -134,9 +120,8 @@ def build_recommendation(
     metric_reasons: list[str],
 ) -> str:
     """Turn a failure into actionable guidance on prompts and tool descriptions."""
-    case_type = case.get("type", "happy_path")
-    description = case.get("description", "")
-    prompt = case.get("input") or "(multi-turn — see turn details)"
+    kind = kind_of(case)
+    prompt = case.get("input") or "(multi-turn, see turn details)"
     expected_names = _tool_names(expected_tools)
     actual_names = _tool_names(actual_tools)
     expected_primary = expected_names[0] if expected_names else "the expected tool"
@@ -150,16 +135,15 @@ def build_recommendation(
         )
 
     override_note = ""
-    if os.environ.get("USE_DESCRIPTION_OVERRIDES", "").lower() in {"1", "true", "yes"} or os.environ.get(
-        "DESCRIPTION_OVERRIDES_FILE"
-    ):
+    current = get_current_report()
+    if current is not None and current.description_mode == "overrides":
         override_note = (
-            " This run used description_overrides.json rather than live MCP descriptions — "
-            "if a revised override fixes routing, promote that wording to the MCP server."
+            " This run used description_overrides.json rather than live MCP descriptions. "
+            "If a revised override fixes routing, promote that wording to the MCP server."
         )
 
-    if case_type == "ambiguous_selection":
-        competing = _competing_tool_hint(description, expected_primary)
+    if kind.has_competitor:
+        competing = stored_competitor(case)
         competitor_text = (
             f" and `{competing}`" if competing and competing != expected_primary else ""
         )
@@ -167,14 +151,14 @@ def build_recommendation(
             f"This case tests routing between `{expected_primary}`{competitor_text}. "
             f"Eval prompt: \"{prompt}\". "
             f"The agent chose `{actual_primary}` instead of `{expected_primary}`. "
-            "Recommendation: tighten the MCP tool descriptions so only one tool clearly applies — "
-            f"sharpen `{expected_primary}` for this scenario or narrow `{actual_primary}` so it does not absorb it. "
+            "Recommendation: tighten the MCP tool descriptions so only one tool clearly applies. "
+            f"Sharpen `{expected_primary}` for this scenario or narrow `{actual_primary}` so it does not absorb it. "
             "Also confirm the eval prompt uses vocabulary different from both descriptions and is not biased "
             f"toward `{actual_primary}`."
             f"{override_note}"
         )
 
-    if case_type == "missing_parameter":
+    if not kind.expects_tool_calls:
         if actual_names:
             return (
                 f"The prompt deliberately omits required information: \"{prompt}\". "
@@ -190,7 +174,16 @@ def build_recommendation(
             "that encourage premature tool use."
         )
 
-    if case_type == "multi_tool":
+    if kind.has_turns:
+        return (
+            f"This multi_turn case failed. Eval prompt: \"{prompt}\". "
+            f"Failure detail: {failure_detail or '; '.join(metric_reasons)}. "
+            "Recommendation: keep the first turn too vague to call a tool, then after the user "
+            "supplies the missing field the expected tool should be unambiguous."
+            f"{override_note}"
+        )
+
+    if kind.ordered:
         return (
             f"This workflow case expects tools in order: {', '.join(expected_names)}. "
             f"The agent produced: {', '.join(actual_names) or 'no tool calls'}. "

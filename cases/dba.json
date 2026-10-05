@@ -183,7 +183,8 @@
             "database_name": "{EVALS_DATABASE}"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_databaseSpace"
     },
     {
       "id": "dba_databaseSpace_ambiguous_vs_systemSpace",
@@ -197,7 +198,8 @@
             "database_name": "{EVALS_DATABASE}"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_systemSpace"
     },
     {
       "id": "dba_systemSpace_ambiguous_vs_databaseSpace",
@@ -209,7 +211,8 @@
           "name": "dba_systemSpace",
           "params": {}
         }
-      ]
+      ],
+      "competing_tool": "dba_databaseSpace"
     },
     {
       "id": "dba_tableSqlList_ambiguous_vs_userSqlList",
@@ -224,7 +227,8 @@
             "no_days": 7
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_userSqlList"
     },
     {
       "id": "dba_userSqlList_ambiguous_vs_tableSqlList",
@@ -239,7 +243,8 @@
             "no_days": 7
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_tableSqlList"
     },
     {
       "id": "dba_tableUsageImpact_ambiguous_vs_resusageSummary",
@@ -253,7 +258,8 @@
             "database_name": "{EVALS_DATABASE}"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_resusageSummary"
     },
     {
       "id": "dba_resusageSummary_ambiguous_vs_tableUsageImpact",
@@ -267,7 +273,8 @@
             "no_days": 30
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_tableUsageImpact"
     },
     {
       "id": "dba_tableUsageImpact_ambiguous_vs_sessionInfo",
@@ -281,7 +288,8 @@
             "database_name": "{EVALS_DATABASE}"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_sessionInfo"
     },
     {
       "id": "dba_sessionInfo_ambiguous_vs_tableUsageImpact",
@@ -295,7 +303,8 @@
             "user_name": "SALES_ADMIN"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_tableUsageImpact"
     },
     {
       "id": "dba_userDelay_ambiguous_vs_flowControl",
@@ -310,7 +319,8 @@
             "end_date": "2024-03-31"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_flowControl"
     },
     {
       "id": "dba_flowControl_ambiguous_vs_userDelay",
@@ -325,7 +335,8 @@
             "end_date": "2024-02-28"
           }
         }
-      ]
+      ],
+      "competing_tool": "dba_userDelay"
     },
     {
       "id": "dba_tableSpace_missing_db",
@@ -364,7 +375,7 @@
     },
     {
       "id": "dba_databaseSpace_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which database, then calls dba_databaseSpace after user clarifies",
       "turns": [
         {
@@ -386,7 +397,7 @@
     },
     {
       "id": "dba_tableSqlList_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which table, then calls dba_tableSqlList after user clarifies",
       "turns": [
         {
@@ -409,7 +420,7 @@
     },
     {
       "id": "dba_userSqlList_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which user, then calls dba_userSqlList after user clarifies",
       "turns": [
         {

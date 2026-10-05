@@ -13,7 +13,8 @@
             "user_name": "bob"
           }
         }
-      ]
+      ],
+      "competing_tool": "sec_userRoles"
     },
     {
       "id": "sec_userDbPermissions_missing_user",
@@ -34,7 +35,8 @@
             "role_name": "analyst"
           }
         }
-      ]
+      ],
+      "competing_tool": "sec_userDbPermissions"
     },
     {
       "id": "sec_userRoles_ambiguous_vs_rolePermissions",
@@ -48,7 +50,8 @@
             "user_name": "diana"
           }
         }
-      ]
+      ],
+      "competing_tool": "sec_rolePermissions"
     },
     {
       "id": "sec_rolePermissions_ambiguous_vs_userRoles",
@@ -62,7 +65,8 @@
             "role_name": "analyst"
           }
         }
-      ]
+      ],
+      "competing_tool": "sec_userRoles"
     },
     {
       "id": "sec_userRoles_ambiguous_vs_userDbPermissions",
@@ -76,7 +80,8 @@
             "user_name": "diana"
           }
         }
-      ]
+      ],
+      "competing_tool": "sec_userDbPermissions"
     },
     {
       "id": "sec_multi_tool_user_roles_then_role_permissions",
@@ -156,7 +161,7 @@
     },
     {
       "id": "sec_userRoles_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which user, then calls sec_userRoles after user clarifies",
       "turns": [
         {
@@ -178,7 +183,7 @@
     },
     {
       "id": "sec_rolePermissions_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which role, then calls sec_rolePermissions after user clarifies",
       "turns": [
         {
@@ -200,7 +205,7 @@
     },
     {
       "id": "sec_userDbPermissions_clarify_then_call",
-      "type": "missing_parameter",
+      "type": "multi_turn",
       "description": "Agent asks which user, then calls sec_userDbPermissions after user clarifies",
       "turns": [
         {

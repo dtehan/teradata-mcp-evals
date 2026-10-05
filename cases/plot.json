@@ -79,7 +79,8 @@
             "columns": ["amount"]
           }
         }
-      ]
+      ],
+      "competing_tool": "plot_radar_chart"
     },
     {
       "id": "plot_pie_vs_polar_ambiguous",
@@ -95,7 +96,8 @@
             "column": "amount"
           }
         }
-      ]
+      ],
+      "competing_tool": "plot_polar_chart"
     },
     {
       "id": "plot_missing_data",

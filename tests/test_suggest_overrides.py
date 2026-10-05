@@ -43,11 +43,23 @@ def test_load_failed_ambiguous_cases_backward_compatible():
 
 def test_tool_pair_uses_actual_tool_when_present():
     case = {
-        "description": "Should use base_readQuery, not base_tablePreview",
+        "type": "ambiguous_selection",
+        "competing_tool": "base_tablePreview",
+        "description": "Should use base_readQuery",
         "expected_tools": [{"name": "base_readQuery", "params": {}}],
         "actual_tools": [{"name": "base_tablePreview", "params": {}}],
     }
     assert tool_pair_for_case(case) == ("base_readQuery", "base_tablePreview")
+
+
+def test_tool_pair_uses_stored_competitor_when_agent_called_expected():
+    case = {
+        "type": "ambiguous_selection",
+        "competing_tool": "plot_radar_chart",
+        "expected_tools": [{"name": "plot_line_chart", "params": {}}],
+        "actual_tools": [{"name": "plot_line_chart", "params": {}}],
+    }
+    assert tool_pair_for_case(case) == ("plot_line_chart", "plot_radar_chart")
 
 
 def test_tools_for_case_missing_parameter_uses_actual_tools():

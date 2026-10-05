@@ -1,22 +1,21 @@
-"""deepeval metrics for the Teradata MCP eval suite."""
+"""deepeval metrics for the Teradata MCP eval suite.
+
+Tool name and parameter correctness are decided by judge/checks.py before any
+metric runs. ToolCorrectnessMetric is not used: without available_tools it
+assigns a constant selection score and never calls Bedrock. Clarification is
+the only LLM judge, via GEval.
+"""
 
 from __future__ import annotations
 
-from deepeval.metrics import GEval, ToolCorrectnessMetric
+from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCaseParams
 
-
-def tool_correctness_metric(judge_llm) -> ToolCorrectnessMetric:
-    """Evaluates tool selection accuracy and parameter correctness via LLM judge."""
-    return ToolCorrectnessMetric(
-        threshold=0.5,
-        model=judge_llm,
-        include_reason=True,
-    )
+from judge.kinds import Kind, kind_of
 
 
 def clarification_metric(judge_llm) -> GEval:
-    """For missing_parameter cases: checks the agent asked for clarification rather than hallucinating."""
+    """For missing_parameter cases and clarification turns: the agent asked instead of guessing."""
     return GEval(
         name="Clarification Check",
         criteria=(
@@ -35,9 +34,9 @@ def clarification_metric(judge_llm) -> GEval:
     )
 
 
-def get_metrics(case: dict, judge_llm) -> list:
-    """Return the appropriate metric set for a given test case type."""
-    metrics = [tool_correctness_metric(judge_llm)]
-    if case.get("type") == "missing_parameter":
-        metrics.append(clarification_metric(judge_llm))
-    return metrics
+def get_metrics(case: dict, judge_llm, *, kind: Kind | None = None) -> list:
+    """Return GEval clarification when the kind forbids tool calls, otherwise no metrics."""
+    resolved = kind if kind is not None else kind_of(case)
+    if not resolved.expects_tool_calls:
+        return [clarification_metric(judge_llm)]
+    return []
