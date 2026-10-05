@@ -2,31 +2,40 @@
 
 Eval suite for the [Teradata MCP Server](https://github.com/Teradata/teradata-mcp-server) community edition.
 
-Tests whether an LLM agent selects the right MCP tool and forms valid parameters from natural language. The primary goal is **MCP tool description quality** — routing failures on `ambiguous_selection` cases usually mean overlapping or unclear descriptions. Uses [deepeval](https://github.com/confident-ai/deepeval) and Claude on AWS Bedrock as agent and judge.
+The cases ask an LLM agent to select the right MCP tool and to form valid parameters from natural language. A failed `ambiguous_selection` case usually means that two tool descriptions overlap, or that one description is unclear. [deepeval](https://github.com/confident-ai/deepeval) runs the cases. Claude on AWS Bedrock is the agent and the judge.
 
-## Quick start
+## Run the base module
+
+You need Python 3.11 or newer, a Teradata MCP Server at `MCP_SERVER_URL`, and Bedrock credentials. The install steps and the `.env` keys are in [docs/setup.md](docs/setup.md).
 
 ```bash
-uv venv && uv sync
-cp .env.example .env   # set MCP_SERVER_URL, EVALS_DATABASE, Bedrock credentials
-
-python setup_test_data.py
-python run_evals.py --module base
+uv venv
+uv sync
+cp .env.example .env
 ```
 
-Open `results/latest_summary.md` for pass/fail details, or run `python run_evals.py --list-runs` to browse run directories.
+Set `MCP_SERVER_URL`, `EVALS_DATABASE`, and the Bedrock credentials in `.env`. Then create the eval tables and run the `base` module.
 
-## Workflow
+```bash
+uv run python setup_test_data.py
+uv run python run_evals.py --module base
+```
 
-Baseline evals use **live MCP descriptions**. To iterate on wording before changing the server:
+The run writes `results/latest_summary.md`. Open that file to see which cases passed and which cases failed. Run `uv run python run_evals.py --list-runs` to print recent runs, with pass counts and fail counts.
 
-1. `run_evals.py` — baseline
-2. `suggest_overrides.py` — LLM draft for failed cases
-3. `suggest_overrides.py --apply` — merge reviewed draft into `description_overrides.json`
-4. `run_evals.py --with-description-overrides` — test locally
-5. Promote to MCP server → baseline again
+## Test a description change
 
-Full diagram, commands, and results files: **[docs/workflow.md](docs/workflow.md)**
+A baseline run reads tool descriptions from the MCP server. To test new descriptions before you edit the server:
+
+1. Run `uv run python run_evals.py`.
+2. If cases failed, run `uv run python suggest_overrides.py`. The command writes `results/suggested_overrides.json`.
+3. Read `results/suggested_overrides.json`.
+4. Run `uv run python suggest_overrides.py --apply`. The command replaces `description_overrides.json` with that draft.
+5. Run `uv run python run_evals.py --with-description-overrides`.
+6. If that run passes, copy the descriptions into the MCP server repository.
+7. Run `uv run python run_evals.py` again.
+
+Commands, result files, and a diagram are in [docs/workflow.md](docs/workflow.md).
 
 ## Documentation
 
